@@ -446,6 +446,59 @@
 
   .auto-on { background: var(--terracotta) !important; }
 
+  /* ── Card pronunciation display ── */
+  .card-listen-btn {
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    border-radius: 20px;
+    color: white;
+    font-size: 15px;
+    padding: 4px 14px;
+    cursor: pointer;
+    margin: 6px 0 4px;
+    transition: background 0.15s;
+    display: inline-block;
+  }
+  .card-listen-btn:hover { background: rgba(255,255,255,0.28); }
+  .card-listen-btn:active { transform: scale(0.95); }
+  .card-listen-btn.playing { background: rgba(255,255,255,0.35); }
+
+  .card-pronunciation {
+    font-size: 12px;
+    opacity: 0.88;
+    margin: 6px 0 2px;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+    text-align: center;
+  }
+  .pron-syllables {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .pron-stress {
+    color: #FFE08A;
+    font-size: 16px;
+  }
+  .pron-normal {
+    opacity: 0.75;
+    font-size: 13px;
+  }
+  .pron-dot {
+    opacity: 0.4;
+    font-size: 11px;
+    margin: 0 1px;
+  }
+  .pron-tip {
+    font-size: 11px;
+    opacity: 0.8;
+    display: block;
+    font-style: italic;
+    margin-top: 2px;
+  }
+
   @keyframes spin { to { transform: rotate(360deg); } }
   .playing-indicator {
     display: inline-block;
@@ -469,6 +522,7 @@
   <script src="vocab-extended-10-idioms.js"></script>
   <script src="vocab-extended-09-culture.js"></script>
   <script src="vocab-extended-07-social.js"></script>
+  <script src="vocab-extended-02-geography.js"></script>
 </head>
 <body>
 
@@ -529,6 +583,8 @@
         </div>
         <div class="flashcard-face flashcard-back">
           <div class="card-translation" id="cardTranslation">...</div>
+          <div class="card-pronunciation" id="cardPronunciation"></div>
+          <button class="card-listen-btn" id="cardListenBtn" onclick="speakCard(event)" title="Listen">🔊</button>
           <div class="card-example" id="cardExample"></div>
           <div class="card-hint" id="cardHint"></div>
         </div>
@@ -792,7 +848,8 @@ function mergeVocab() {
   // Merge any extended vocab files (VOCAB_EXT_10, VOCAB_EXT_09, etc.)
   [typeof VOCAB_EXT_10!=='undefined'?VOCAB_EXT_10:null,
    typeof VOCAB_EXT_09!=='undefined'?VOCAB_EXT_09:null,
-   typeof VOCAB_EXT_07!=='undefined'?VOCAB_EXT_07:null].forEach(ext => {
+   typeof VOCAB_EXT_07!=='undefined'?VOCAB_EXT_07:null,
+   typeof VOCAB_EXT_02!=='undefined'?VOCAB_EXT_02:null].forEach(ext => {
     if (!ext) return;
     Object.entries(ext).forEach(([cat, words]) => {
       if (VOCAB[cat]) {
@@ -1114,6 +1171,84 @@ function setDirection(dir) {
   showCard();
 }
 
+
+/* ── Pronunciation Engine ── */
+
+// Rule-based pronunciation tips triggered by specific letter patterns
+const PRON_RULES = [
+  { pattern: /(?<![sc])h/i,            tip: 'H is always silent in Spanish — just skip it' },
+  { pattern: /qu/i,                    tip: 'QU = K sound, U is silent (que = "ke", quiero = "KJER-o")' },
+  { pattern: /gü/i,              tip: 'GÜ (diaeresis) = GW sound — vergüenza = "ber-GWEN-sa"' },
+  { pattern: /gu(?=[eéií])/i, tip: 'GU before E/I = plain G, U is silent (guerra = "GER-ra")' },
+  { pattern: /ll/i,                    tip: 'LL = Y sound in Latin America — llevar = "ye-BAR"' },
+  { pattern: /ñ/,                 tip: 'Ñ = NY sound, like "canyon" — señor = "se-NYOR"' },
+  { pattern: /[jg](?=[eéií])/i, tip: 'J and G before E/I = strong H sound — jamón = "ha-MON"' },
+  { pattern: /rr/i,                    tip: 'RR = trilled R — vibrate your tongue tip against the roof' },
+  { pattern: /(?:^|(?<=\s))r/i,       tip: 'R at the start of a word is always trilled, like RR' },
+  { pattern: /[cz](?=[eéií])/i, tip: 'C/Z before E or I = S in Latin America — no lisp' },
+  { pattern: /v/i,                     tip: 'V = B sound in Spanish — no lip-teeth contact' },
+  { pattern: /ción|sión/i,   tip: '-CIÓN always ends SJON and is always stressed' },
+  { pattern: /ch/i,                    tip: 'CH = "ch" as in "church" — always consistent' },
+  { pattern: /ado(?!\w)/i,            tip: 'Final -ADO: the D softens almost to silence — "ah-o"' },
+  { pattern: /[áéíóú]/, tip: 'Accent mark shows exactly which syllable to stress' },
+  { pattern: /ue|ua|ie|ia|io|ui/i,     tip: 'Diphthong — glide quickly through both vowels as one syllable' },
+  { pattern: /[aeiou]d[aeiou]/i,       tip: 'D between vowels becomes very soft, like "th" in "the"' },
+  { pattern: /[aeiou]r[aeiou]/i,       tip: 'R between vowels = a single tongue tap, not trilled' },
+  { pattern: /x/i,                     tip: 'X in many LatAm words = H sound (México = "ME-hi-co")' },
+];
+
+// Return the single most useful tip for a given Spanish word/phrase
+function getPronTip(text) {
+  // Only check the Spanish part — strip accents for pattern matching where needed
+  const lower = text.toLowerCase();
+  // Priority order — check most impactful rules first
+  for (const rule of PRON_RULES) {
+    if (rule.pattern.test(lower)) {
+      return rule.tip;
+    }
+  }
+  return null;
+}
+
+// Build syllable HTML for display on card back
+// Reuses the syllabify/getStressIndex functions from the speak section
+function buildCardSyllables(word) {
+  // Handle multi-word phrases — just show the first content word
+  const words = word.replace(/[¿¡.,;:!?«»]/g, '').trim().split(/\s+/);
+  // Pick the longest word (usually the most informative to break down)
+  const target = words.reduce((a, b) => (b.length > a.length ? b : a), words[0] || word);
+  if (!target || target.length < 3) return null; // too short to be useful
+
+  const syllables = syllabify(target);
+  if (syllables.length < 2) return null; // single syllable — nothing to show
+
+  const stressed = getStressIndex(syllables, target);
+  const parts = syllables.map((s, i) => {
+    if (i === stressed) {
+      return `<span class="pron-stress">${s.toUpperCase()}</span>`;
+    }
+    return `<span class="pron-normal">${s}</span>`;
+  });
+  return parts.join('<span class="pron-dot">·</span>');
+}
+
+// Main function called from showCard — returns HTML string for #cardPronunciation
+function buildCardPronunciation(spanishText) {
+  if (!spanishText) return '';
+
+  const syllableHtml = buildCardSyllables(spanishText);
+  const tip = getPronTip(spanishText);
+
+  let html = '';
+  if (syllableHtml) {
+    html += `<span class="pron-syllables">${syllableHtml}</span>`;
+  }
+  if (tip) {
+    html += `<span class="pron-tip">🔤 ${tip}</span>`;
+  }
+  return html;
+}
+
 function showCard() {
   const card = currentDeck[deckIndex];
   if (!card) {
@@ -1121,12 +1256,17 @@ function showCard() {
     document.getElementById('cardWord').textContent = '—';
     document.getElementById('cardType').textContent = '';
     document.getElementById('cardTranslation').textContent = 'No cards in this category / level';
+    document.getElementById('cardPronunciation').innerHTML = '';
     document.getElementById('cardExample').textContent = '';
     document.getElementById('cardHint').textContent = '';
     return;
   }
   const levelBadge = card.level ? '[' + card.level + '] ' : '';
   const fc = document.getElementById('flashcard');
+
+  // Pronunciation is always based on the Spanish word
+  const pronHtml = buildCardPronunciation(card.es);
+  document.getElementById('cardPronunciation').innerHTML = pronHtml;
 
   if (cardDirection === 'es2en') {
     // Front: Spanish word
@@ -1140,7 +1280,6 @@ function showCard() {
     document.getElementById('cardType').textContent = levelBadge + card.type;
     document.getElementById('cardWord').textContent = card.en;
     document.getElementById('cardTranslation').textContent = card.es;
-    // Show example on back (still in Spanish so it's a bonus reading challenge)
     document.getElementById('cardExample').textContent = card.ex || '';
     document.getElementById('cardHint').textContent = card.hint ? '💡 ' + card.hint : '';
   }
@@ -1164,11 +1303,41 @@ document.getElementById('flashWrap').onclick = () => {
     document.getElementById('ratingRow').style.display = 'flex';
     document.getElementById('flashNav').style.display = 'none';
     trackSeen(currentDeck[deckIndex]);
+    // Auto-play pronunciation when card flips to back
+    setTimeout(speakCurrentCard, 300);
   } else {
     document.getElementById('ratingRow').style.display = 'none';
     document.getElementById('flashNav').style.display = 'flex';
   }
 };
+
+function speakCard(e) {
+  // Called from button click — stop event bubbling so card doesn't flip back
+  if (e) e.stopPropagation();
+  speakCurrentCard();
+}
+
+function speakCurrentCard() {
+  const card = currentDeck[deckIndex];
+  if (!card) return;
+  // Always speak the Spanish word regardless of card direction
+  const text = card.es;
+  const btn = document.getElementById('cardListenBtn');
+  if (btn) btn.classList.add('playing');
+  // Use speak() from the Speak section if available, otherwise fallback
+  if (typeof speak === 'function') {
+    speak(text, speakRate || 0.85, () => {
+      if (btn) btn.classList.remove('playing');
+    });
+  } else {
+    // Fallback: direct TTS without voice preference
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'es-MX';
+    utter.rate = 0.85;
+    utter.onend = () => { if (btn) btn.classList.remove('playing'); };
+    speechSynthesis.speak(utter);
+  }
+}
 
 function rateCard(rating) {
   const word = currentDeck[deckIndex];
