@@ -526,6 +526,8 @@
   <script src="vocab-extended-07-social.js"></script>
   <script src="vocab-extended-02-geography.js"></script>
   <script src="vocab-extended-b1-gaps.js"></script>
+  <script src="vocab-extended-verbs.js"></script>
+  <script src="vocab-extended-connectors.js"></script>
 </head>
 <body>
 
@@ -868,7 +870,9 @@ function mergeVocab() {
    typeof VOCAB_EXT_09!=='undefined'?VOCAB_EXT_09:null,
    typeof VOCAB_EXT_07!=='undefined'?VOCAB_EXT_07:null,
    typeof VOCAB_EXT_02!=='undefined'?VOCAB_EXT_02:null,
-   typeof VOCAB_EXT_B1!=='undefined'?VOCAB_EXT_B1:null].forEach(ext => {
+   typeof VOCAB_EXT_B1!=='undefined'?VOCAB_EXT_B1:null,
+   typeof VOCAB_EXT_VERBS!=='undefined'?VOCAB_EXT_VERBS:null,
+   typeof VOCAB_EXT_CONNECTORS!=='undefined'?VOCAB_EXT_CONNECTORS:null].forEach(ext => {
     if (!ext) return;
     Object.entries(ext).forEach(([cat, words]) => {
       if (VOCAB[cat]) {
