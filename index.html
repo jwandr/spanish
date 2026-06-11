@@ -378,6 +378,8 @@
     transition: all 0.15s;
   }
   .mode-btn.active { background: var(--terracotta); color: white; }
+  [data-filter="review"].active   { background: var(--gold-dark) !important; }
+  [data-filter="mastered"].active { background: var(--sage) !important; }
 
   /* ── Tense chart ── */
   .tense-chart {
@@ -569,6 +571,16 @@
 
   <!-- Flashcard mode -->
   <div id="flashMode">
+    <!-- Deck filter toggle -->
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:0.6rem;flex-wrap:wrap;">
+      <div class="mode-toggle" id="deckFilterToggle">
+        <button class="mode-btn active" data-filter="all"      onclick="setDeckFilter('all')">All</button>
+        <button class="mode-btn"        data-filter="review"   onclick="setDeckFilter('review')">⚑ Review</button>
+        <button class="mode-btn"        data-filter="mastered" onclick="setDeckFilter('mastered')">★ Mastered</button>
+      </div>
+      <span id="deckFilterCount" style="font-size:11px;color:var(--text-muted);"></span>
+    </div>
+
     <!-- Progress bar -->
     <div class="progress-bar-wrap" style="margin-bottom:0.75rem;">
       <div class="progress-bar" id="vocabProgress" style="width:0%"></div>
@@ -816,7 +828,11 @@
     </div>
     <div class="stat-tile">
       <div class="stat-value" id="pMastered">0</div>
-      <div class="stat-label">Mastered</div>
+      <div class="stat-label">★ Mastered</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-value" id="pReview" style="color:var(--gold-dark);">0</div>
+      <div class="stat-label">⚑ To review</div>
     </div>
   </div>
   <div class="tip-box" style="margin-bottom:1rem;">
@@ -830,8 +846,9 @@
   </div>
 
   <div class="card">
-    <div style="font-size:14px;font-weight:600;margin-bottom:0.75rem;">Words to review (need more practice)</div>
-    <div id="reviewList" style="font-size:13px;color:var(--text-muted);line-height:1.8;"></div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:0.5rem;">⚑ Words to review</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;">Seen but score ≤ 2 — use the <strong>Review</strong> filter on flashcards to drill these</div>
+    <div id="reviewList" style="font-size:13px;color:var(--text-muted);line-height:1.9;"></div>
   </div>
 </section>
 
@@ -1096,6 +1113,7 @@ document.querySelectorAll('.nav-tab').forEach(t => {
 
 /* ══ VOCABULARY ══ */
 let currentLevel = 'All';
+let deckFilter = 'all'; // 'all' | 'review' | 'mastered'
 
 function buildCatPills() {
   const row = document.getElementById('catPills');
@@ -1130,23 +1148,94 @@ function filterByLevel(cards) {
   return cards.filter(c => c.level === currentLevel);
 }
 
+// Get the progress score for a card (0–5), -1 if never seen
+function getCardScore(cat, card) {
+  const key = cat + '::' + card.es;
+  if (!progress[key]) return -1;
+  return progress[key].score || 0;
+}
+
+// Apply deck filter: 'all' | 'review' | 'mastered'
+// review  = score 0-2 (seen and struggled, or never seen)
+// mastered = score 4-5
+function filterByDeck(cards, cat) {
+  if (deckFilter === 'all') return cards;
+
+  const filtered = cards.filter(c => {
+    const score = getCardScore(cat, c);
+    if (deckFilter === 'review')   return score <= 2; // never seen OR struggled
+    if (deckFilter === 'mastered') return score >= 4;
+    return true;
+  });
+  return filtered;
+}
+
+// Build a cross-category review deck from ALL vocab (not just current cat)
+function buildReviewDeckAllCats() {
+  const reviewCards = [];
+  Object.entries(VOCAB).forEach(([cat, words]) => {
+    words.forEach(word => {
+      const score = getCardScore(cat, word);
+      if (score <= 2) {
+        reviewCards.push({...word, _cat: cat});
+      }
+    });
+  });
+  return shuffle(reviewCards);
+}
+
+function setDeckFilter(filter) {
+  deckFilter = filter;
+  document.querySelectorAll('[data-filter]').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  loadDeck();
+}
+
+function updateDeckFilterCount(count, total) {
+  const el = document.getElementById('deckFilterCount');
+  if (!el) return;
+  if (deckFilter === 'all') {
+    el.textContent = '';
+  } else if (deckFilter === 'review') {
+    el.textContent = count === total ? 'all cards need review' : `${count} card${count!==1?'s':''} to review`;
+  } else {
+    el.textContent = count === 0 ? 'none mastered yet' : `${count} mastered`;
+  }
+}
+
 function loadDeck() {
   // Re-sync currentCat in case VOCAB loaded after initial assignment
   const cats = Object.keys(VOCAB);
   if (cats.length && !VOCAB[currentCat]) currentCat = cats[0];
   const raw = VOCAB[currentCat] || [];
-  const filtered = filterByLevel([...raw]);
 
-  if (filtered.length >= 3) {
-    // Enough cards at this level — use filtered deck
-    currentDeck = shuffle(filtered);
+  // Apply level filter first, then deck filter
+  const levelFiltered = filterByLevel([...raw]);
+  const deckFiltered  = filterByDeck(levelFiltered, currentCat);
+
+  // Update the count badge
+  updateDeckFilterCount(deckFiltered.length, levelFiltered.length);
+
+  if (deckFiltered.length >= 3) {
+    currentDeck = shuffle(deckFiltered);
     hideLevelFallbackNote();
-  } else if (filtered.length > 0) {
-    // A handful of cards — show them but note there aren't many
-    currentDeck = shuffle(filtered);
-    showLevelFallbackNote(`Only ${filtered.length} ${currentLevel} word${filtered.length>1?'s':''} in this category — showing what's available.`);
+  } else if (deckFiltered.length > 0) {
+    currentDeck = shuffle(deckFiltered);
+    const label = deckFilter === 'review' ? 'review cards' : deckFilter === 'mastered' ? 'mastered cards' : 'cards';
+    showLevelFallbackNote(`Only ${deckFiltered.length} ${label} here — showing what's available.`);
+  } else if (deckFilter !== 'all') {
+    // No cards match current deck filter — fall back to full level-filtered set
+    currentDeck = shuffle(levelFiltered.length ? levelFiltered : [...raw]);
+    const label = deckFilter === 'review' ? 'words to review' : 'mastered words';
+    showLevelFallbackNote(`No ${label} in this category yet — showing all cards.`);
+  } else if (levelFiltered.length >= 3) {
+    currentDeck = shuffle(levelFiltered);
+    hideLevelFallbackNote();
+  } else if (levelFiltered.length > 0) {
+    currentDeck = shuffle(levelFiltered);
+    showLevelFallbackNote(`Only ${levelFiltered.length} ${currentLevel} word${levelFiltered.length!==1?'s':''} — showing what's available.`);
   } else {
-    // No cards at this level in this category — fall back to all levels
     currentDeck = shuffle([...raw]);
     if (currentLevel !== 'All') {
       showLevelFallbackNote(`No ${currentLevel} words in "${currentCat}" — showing all levels instead.`);
@@ -1378,10 +1467,41 @@ function rateCard(rating) {
   const key = currentCat + '::' + word.es;
   if (!progress[key]) progress[key] = {seen:0,correct:0,score:0};
   progress[key].seen++;
-  if (rating === 'easy') { progress[key].correct++; progress[key].score = Math.min(5, (progress[key].score||0)+2); bumpStreak(); }
-  else if (rating === 'ok') { progress[key].correct++; progress[key].score = Math.min(5, (progress[key].score||0)+1); bumpStreak(); }
-  else { progress[key].score = Math.max(0, (progress[key].score||0)-1); resetStreakUI(); }
+  if (rating === 'easy') {
+    progress[key].correct++;
+    progress[key].score = Math.min(5, (progress[key].score||0)+2);
+    bumpStreak();
+  } else if (rating === 'ok') {
+    progress[key].correct++;
+    progress[key].score = Math.min(5, (progress[key].score||0)+1);
+    bumpStreak();
+  } else {
+    progress[key].score = Math.max(0, (progress[key].score||0)-1);
+    resetStreakUI();
+  }
   saveProgress();
+
+  // In review mode: if card just got Easy (score now >=4), remove it from deck
+  // so it stops appearing until you switch back to All
+  if (deckFilter === 'review' && progress[key].score >= 4 && currentDeck.length > 1) {
+    currentDeck.splice(deckIndex, 1);
+    if (deckIndex >= currentDeck.length) deckIndex = 0;
+    updateDeckFilterCount(currentDeck.length, currentDeck.length);
+    showCard();
+    updateVocabProgress();
+    return; // skip the normal nextCard() call
+  }
+
+  // In mastered mode: if card just dropped below 4 (marked hard), remove it
+  if (deckFilter === 'mastered' && progress[key].score < 4 && currentDeck.length > 1) {
+    currentDeck.splice(deckIndex, 1);
+    if (deckIndex >= currentDeck.length) deckIndex = 0;
+    updateDeckFilterCount(currentDeck.length, currentDeck.length);
+    showCard();
+    updateVocabProgress();
+    return;
+  }
+
   nextCard();
 }
 
@@ -1390,16 +1510,26 @@ function trackSeen(word) {
   localStorage.setItem('sm_settings', JSON.stringify(settings));
 }
 
-function nextCard() { deckIndex = (deckIndex + 1) % currentDeck.length; showCard(); }
+function nextCard() {
+  deckIndex++;
+  // Reshuffle and loop when deck is exhausted
+  if (deckIndex >= currentDeck.length) {
+    deckIndex = 0;
+    currentDeck = shuffle([...currentDeck]);
+  }
+  showCard();
+}
 function prevCard() { deckIndex = (deckIndex - 1 + currentDeck.length) % currentDeck.length; showCard(); }
 
 function updateVocabProgress() {
-  const pct = Math.round((deckIndex / currentDeck.length) * 100);
+  const pct = Math.round(((deckIndex + 1) / currentDeck.length) * 100);
   document.getElementById('vocabProgress').style.width = pct + '%';
-  document.getElementById('vocabCounter').textContent = `Card ${deckIndex + 1} of ${currentDeck.length}`;
-  const corrCount = Object.values(progress).filter(p => (p.score||0) >= 4).length;
-  const hardCount = Object.values(progress).filter(p => (p.score||0) <= 1 && p.seen > 0).length;
-  document.getElementById('vocabScore').textContent = `✓ ${corrCount}  ✗ ${hardCount}`;
+  document.getElementById('vocabCounter').textContent = `${deckIndex + 1} / ${currentDeck.length}`;
+  // Mastered = score >= 4, Review = score <= 2 and seen > 0
+  const allProgress = Object.values(progress);
+  const mastered  = allProgress.filter(p => (p.score||0) >= 4).length;
+  const needsWork = allProgress.filter(p => (p.score||0) <= 2 && p.seen > 0).length;
+  document.getElementById('vocabScore').textContent = `★ ${mastered}  ⚑ ${needsWork}`;
 }
 
 /* Rapid fire */
@@ -2017,13 +2147,16 @@ function renderProgress() {
   const a2count = allWords.filter(w=>w.level==='A2').length;
   const b1count = allWords.filter(w=>w.level==='B1').length;
   const b2count = allWords.filter(w=>w.level==='B2').length;
+  const needsReview = Object.values(progress).filter(p => (p.score||0) <= 2 && p.seen > 0).length;
   document.getElementById('pTotalSeen').textContent = settings.totalSeen || 0;
   document.getElementById('pCorrect').textContent = settings.totalCorrect || 0;
   document.getElementById('pStreak').textContent = settings.bestStreak || 0;
   document.getElementById('pMastered').textContent = mastered;
-  // Update level breakdown if element exists
   const lvEl = document.getElementById('pLevelBreak');
   if (lvEl) lvEl.textContent = `A1: ${a1count} · A2: ${a2count} · B1: ${b1count} · B2: ${b2count}`;
+  // Update review count stat tile if present
+  const reviewEl = document.getElementById('pReview');
+  if (reviewEl) reviewEl.textContent = needsReview;
 
   const bars = document.getElementById('masteryBars');
   bars.innerHTML = '';
