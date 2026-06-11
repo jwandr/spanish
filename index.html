@@ -523,6 +523,7 @@
   <script src="vocab-extended-09-culture.js"></script>
   <script src="vocab-extended-07-social.js"></script>
   <script src="vocab-extended-02-geography.js"></script>
+  <script src="vocab-extended-b1-gaps.js"></script>
 </head>
 <body>
 
@@ -849,7 +850,8 @@ function mergeVocab() {
   [typeof VOCAB_EXT_10!=='undefined'?VOCAB_EXT_10:null,
    typeof VOCAB_EXT_09!=='undefined'?VOCAB_EXT_09:null,
    typeof VOCAB_EXT_07!=='undefined'?VOCAB_EXT_07:null,
-   typeof VOCAB_EXT_02!=='undefined'?VOCAB_EXT_02:null].forEach(ext => {
+   typeof VOCAB_EXT_02!=='undefined'?VOCAB_EXT_02:null,
+   typeof VOCAB_EXT_B1!=='undefined'?VOCAB_EXT_B1:null].forEach(ext => {
     if (!ext) return;
     Object.entries(ext).forEach(([cat, words]) => {
       if (VOCAB[cat]) {
@@ -1133,16 +1135,48 @@ function loadDeck() {
   const cats = Object.keys(VOCAB);
   if (cats.length && !VOCAB[currentCat]) currentCat = cats[0];
   const raw = VOCAB[currentCat] || [];
-  currentDeck = shuffle(filterByLevel([...raw]));
-  if (currentDeck.length === 0) {
-    // fallback if level filter yields nothing in this category
+  const filtered = filterByLevel([...raw]);
+
+  if (filtered.length >= 3) {
+    // Enough cards at this level — use filtered deck
+    currentDeck = shuffle(filtered);
+    hideLevelFallbackNote();
+  } else if (filtered.length > 0) {
+    // A handful of cards — show them but note there aren't many
+    currentDeck = shuffle(filtered);
+    showLevelFallbackNote(`Only ${filtered.length} ${currentLevel} word${filtered.length>1?'s':''} in this category — showing what's available.`);
+  } else {
+    // No cards at this level in this category — fall back to all levels
     currentDeck = shuffle([...raw]);
+    if (currentLevel !== 'All') {
+      showLevelFallbackNote(`No ${currentLevel} words in "${currentCat}" — showing all levels instead.`);
+    } else {
+      hideLevelFallbackNote();
+    }
   }
   deckIndex = 0;
   isFlipped = false;
   showCard();
   updateVocabProgress();
   if (currentMode === 'rapid') loadRapidQ();
+}
+
+function showLevelFallbackNote(msg) {
+  let note = document.getElementById('levelFallbackNote');
+  if (!note) {
+    note = document.createElement('div');
+    note.id = 'levelFallbackNote';
+    note.style.cssText = 'font-size:12px;color:var(--text-muted);text-align:center;padding:4px 0 0;font-style:italic;';
+    // Insert after the progress bar
+    const pb = document.querySelector('.progress-bar-wrap');
+    if (pb) pb.insertAdjacentElement('afterend', note);
+  }
+  note.textContent = msg;
+}
+
+function hideLevelFallbackNote() {
+  const note = document.getElementById('levelFallbackNote');
+  if (note) note.textContent = '';
 }
 
 let cardDirection = 'es2en'; // 'es2en' or 'en2es'
