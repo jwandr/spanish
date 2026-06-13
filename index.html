@@ -689,6 +689,8 @@
   <script src="vocab-extended-verbs.js"></script>
   <script src="vocab-extended-connectors.js"></script>
   <script src="vocab-extended-chunks.js"></script>
+  <script src="vocab-extended-medical.js"></script>
+  <script src="vocab-extended-wildlife.js"></script>
 </head>
 <body>
 
@@ -1583,7 +1585,9 @@ function mergeVocab() {
    typeof VOCAB_EXT_B1!=='undefined'?VOCAB_EXT_B1:null,
    typeof VOCAB_EXT_VERBS!=='undefined'?VOCAB_EXT_VERBS:null,
    typeof VOCAB_EXT_CONNECTORS!=='undefined'?VOCAB_EXT_CONNECTORS:null,
-   typeof VOCAB_EXT_CHUNKS!=='undefined'?VOCAB_EXT_CHUNKS:null].forEach(ext => {
+   typeof VOCAB_EXT_CHUNKS!=='undefined'?VOCAB_EXT_CHUNKS:null,
+   typeof VOCAB_EXT_MEDICAL!=='undefined'?VOCAB_EXT_MEDICAL:null,
+   typeof VOCAB_EXT_WILDLIFE!=='undefined'?VOCAB_EXT_WILDLIFE:null].forEach(ext => {
     if (!ext) return;
     Object.entries(ext).forEach(([cat, words]) => {
       if (VOCAB[cat]) {
