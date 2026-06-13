@@ -521,6 +521,154 @@
   select:focus { border-color: var(--terracotta); outline: none; box-shadow: 0 0 0 3px rgba(192,78,37,0.1); }
 
   /* ── Responsive ──────────────────────────────────────────────────────────── */
+
+  /* ── Game tab ────────────────────────────────────────────────────────────── */
+
+  /* Lightning match cards */
+  .match-card {
+    padding: 11px 12px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border-strong);
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.14s;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.3;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .match-card:hover   { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+  .match-card.selected { border-color: var(--primary); background: var(--primary); color: white; transform: scale(1.03); box-shadow: 0 4px 12px var(--primary-glow); }
+  .match-card.es-card  { color: var(--header); }
+  .match-card.en-card  { color: var(--text-muted); font-weight: 500; }
+  .match-card.matched  { border-color: var(--teal); background: var(--teal-light); color: var(--teal-dark); cursor: default; opacity: 0.6; transform: scale(0.97); }
+  .match-card.wrong    { border-color: var(--error); background: var(--error-bg); animation: shake 0.3s ease; }
+  .match-card.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    25%{transform:translateX(-5px)}
+    75%{transform:translateX(5px)}
+  }
+  @keyframes matchPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.08); }
+    100% { transform: scale(0.97); opacity: 0.6; }
+  }
+  .match-card.matched { animation: matchPop 0.25s ease forwards; }
+
+  /* Sprint buttons */
+  .sprint-btn {
+    padding: 18px 0;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: var(--font);
+    transition: transform 0.1s, filter 0.1s, box-shadow 0.1s;
+    box-shadow: var(--shadow-md);
+  }
+  .sprint-btn:active  { transform: scale(0.95); filter: brightness(0.92); }
+  .sprint-correct { background: linear-gradient(135deg, #0D9668 0%, var(--teal) 100%); color: white; }
+  .sprint-wrong   { background: linear-gradient(135deg, #A82828 0%, #D04040 100%); color: white; }
+  .sprint-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* Sprint card flash animations */
+  @keyframes flashGreen {
+    0%   { background: var(--surface); }
+    30%  { background: var(--teal-light); }
+    100% { background: var(--surface); }
+  }
+  @keyframes flashRed {
+    0%   { background: var(--surface); }
+    30%  { background: var(--error-bg); }
+    100% { background: var(--surface); }
+  }
+  .sprint-flash-correct { animation: flashGreen 0.35s ease; }
+  .sprint-flash-wrong   { animation: flashRed 0.35s ease; }
+
+  /* Multiplier badge */
+  .mult-badge {
+    display: inline-block;
+    background: var(--amber);
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 99px;
+    margin-left: 4px;
+    animation: pulse 0.3s ease;
+  }
+
+  /* ── Blitz mode ─────────────────────────────────────────────────────────── */
+  .blitz-option {
+    padding: 13px 10px;
+    border: 2px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.12s;
+    font-family: var(--font);
+    color: var(--text);
+    line-height: 1.3;
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .blitz-option:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+  .blitz-option:active { transform: scale(0.97); }
+  .blitz-option.correct {
+    border-color: var(--teal);
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    animation: blitzCorrect 0.3s ease;
+  }
+  .blitz-option.wrong {
+    border-color: var(--error);
+    background: var(--error-bg);
+    color: var(--error);
+    animation: shake 0.3s ease;
+  }
+  .blitz-option.reveal {
+    border-color: var(--teal);
+    background: var(--teal-light);
+    color: var(--teal-dark);
+  }
+  .blitz-option:disabled { pointer-events: none; }
+
+  @keyframes blitzCorrect {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+
+  /* Ring animation urgency colours */
+  .ring-ok      { stroke: var(--primary) !important; }
+  .ring-warning { stroke: var(--amber) !important; }
+  .ring-danger  { stroke: var(--error) !important; }
+
+  /* Word card flash on wrong */
+  @keyframes blitzWrongCard {
+    0%,100% { color: var(--header); }
+    50%     { color: var(--error); }
+  }
+  .blitz-card-wrong #blitzWord { animation: blitzWrongCard 0.4s ease; }
+
+  /* Tier badge colours */
+  .tier-beginner     { background: var(--primary-light); color: var(--primary); }
+  .tier-intermediate { background: var(--teal-light);    color: var(--teal-dark); }
+  .tier-advanced     { background: var(--amber-light);   color: var(--amber-dark); }
+  .tier-expert       { background: var(--error-bg);      color: var(--error); }
+
   @media (max-width: 520px) {
     main { padding: 0.9rem 1rem; }
     .conj-grid { grid-template-columns: 1fr; }
@@ -553,6 +701,7 @@
   <div class="nav-tab active" data-tab="vocab">Vocabulary</div>
   <div class="nav-tab" data-tab="tenses">Tenses</div>
   <div class="nav-tab" data-tab="speak">Speak</div>
+  <div class="nav-tab" data-tab="game">⚡ Game</div>
   <div class="nav-tab" data-tab="progress">Progress</div>
 </nav>
 
@@ -982,6 +1131,207 @@
   </div>
 </section>
 
+
+<!-- ══ GAME ══ -->
+<section class="section" id="tab-game">
+
+  <!-- Header row -->
+  <div class="section-head" style="margin-bottom:0.75rem;">
+    <div class="section-title">⚡ Quick Match</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-gamemode="lightning" onclick="setGameMode('lightning')">⚡ Lightning</button>
+      <button class="mode-btn"        data-gamemode="sprint"    onclick="setGameMode('sprint')">🎯 Sprint</button>
+      <button class="mode-btn"        data-gamemode="blitz"     onclick="setGameMode('blitz')">🔥 Blitz</button>
+    </div>
+  </div>
+
+  <!-- Category & level selector -->
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;">
+    <select id="gameCatSelect" onchange="onGameCatChange()" style="flex:1;min-width:160px;padding:7px 10px;border:1.5px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);outline:none;">
+      <option value="__smart__">⭐ Smart mix (recommended)</option>
+      <option value="__all__">All words</option>
+    </select>
+    <select id="gameLevelSelect" onchange="onGameLevelChange()" style="padding:7px 10px;border:1.5px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);outline:none;">
+      <option value="All">All levels</option>
+      <option value="A1">A1</option>
+      <option value="A2">A2</option>
+      <option value="B1">B1</option>
+      <option value="B2">B2</option>
+    </select>
+  </div>
+
+  <!-- Personal bests strip -->
+  <div id="gameBests" style="display:flex;gap:10px;margin-bottom:0.75rem;font-size:12px;color:var(--text-muted);flex-wrap:wrap;"></div>
+
+  <!-- ── LIGHTNING MATCH MODE ── -->
+  <div id="lightningPanel">
+
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;">
+      Tap a Spanish word, then tap its English meaning. Match all pairs as fast as you can. Hesitation means you need more practice!
+    </div>
+
+    <!-- Timer & score bar -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+      <div style="font-size:22px;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums;" id="lightningTimer">0.0s</div>
+      <div style="font-size:13px;color:var(--text-muted);" id="lightningPairsLeft"></div>
+      <div style="font-size:13px;font-weight:600;color:var(--teal);" id="lightningCombo"></div>
+    </div>
+
+    <!-- Grid of pairs -->
+    <div id="lightningGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;"></div>
+
+    <!-- Start / result buttons -->
+    <div style="text-align:center;" id="lightningStart">
+      <button class="submit-btn" style="padding:12px 32px;font-size:15px;" onclick="startLightning()">▶ Start round</button>
+    </div>
+
+    <!-- Round result -->
+    <div id="lightningResult" style="display:none;text-align:center;padding:1.5rem;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-card);">
+      <div id="lightningResultEmoji" style="font-size:40px;margin-bottom:8px;">⚡</div>
+      <div id="lightningResultTime"  style="font-size:28px;font-weight:800;color:var(--primary);margin-bottom:4px;"></div>
+      <div id="lightningResultMsg"   style="font-size:14px;color:var(--text-muted);margin-bottom:4px;"></div>
+      <div id="lightningResultBest"  style="font-size:12px;color:var(--teal);margin-bottom:1rem;font-weight:600;"></div>
+      <div id="lightningSlowWords"   style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="submit-btn" onclick="startLightning()">▶ Play again</button>
+        <button class="nav-btn"    onclick="newLightningRound()">New words →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SPRINT MODE (True / False) ── -->
+  <div id="sprintPanel" style="display:none;">
+
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;">
+      <strong>30 seconds</strong> — is the pair correct or wrong? Tap as fast as you can. Build your streak for a score multiplier.
+    </div>
+
+    <!-- Sprint card -->
+    <div id="sprintCard" style="background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:2rem 1.5rem;text-align:center;margin-bottom:0.75rem;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:default;">
+      <div id="sprintWord"    style="font-size:26px;font-weight:800;color:var(--header);margin-bottom:10px;letter-spacing:-0.5px;">Ready?</div>
+      <div id="sprintMeaning" style="font-size:17px;color:var(--text-muted);font-weight:500;">Tap Start to begin</div>
+    </div>
+
+    <!-- Timer, score, streak row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:0.75rem;">
+      <div style="text-align:center;background:var(--surface);border-radius:var(--radius-sm);padding:8px;border:1px solid var(--border);">
+        <div id="sprintTimer" style="font-size:22px;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums;">30</div>
+        <div style="font-size:10px;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.5px;">Secs left</div>
+      </div>
+      <div style="text-align:center;background:var(--surface);border-radius:var(--radius-sm);padding:8px;border:1px solid var(--border);">
+        <div id="sprintScore" style="font-size:22px;font-weight:800;color:var(--teal);">0</div>
+        <div style="font-size:10px;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.5px;">Score</div>
+      </div>
+      <div style="text-align:center;background:var(--surface);border-radius:var(--radius-sm);padding:8px;border:1px solid var(--border);">
+        <div id="sprintStreak" style="font-size:22px;font-weight:800;color:var(--amber);">0</div>
+        <div style="font-size:10px;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.5px;">Streak ×<span id="sprintMult">1</span></div>
+      </div>
+    </div>
+
+    <!-- Answer buttons -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0.75rem;">
+      <button id="sprintCorrectBtn" class="sprint-btn sprint-correct" onclick="sprintAnswer(true)">
+        <span style="font-size:28px;">✓</span><br>
+        <span style="font-size:13px;font-weight:600;">Correct</span>
+      </button>
+      <button id="sprintWrongBtn" class="sprint-btn sprint-wrong" onclick="sprintAnswer(false)">
+        <span style="font-size:28px;">✗</span><br>
+        <span style="font-size:13px;font-weight:600;">Wrong</span>
+      </button>
+    </div>
+
+    <!-- Start overlay -->
+    <div id="sprintStartOverlay" style="text-align:center;margin-top:0.5rem;">
+      <button class="submit-btn" style="padding:12px 32px;font-size:15px;" onclick="startSprint()">▶ Start sprint</button>
+    </div>
+
+    <!-- Sprint result -->
+    <div id="sprintResult" style="display:none;text-align:center;padding:1.5rem;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-card);">
+      <div id="sprintResultEmoji" style="font-size:40px;margin-bottom:8px;">🎯</div>
+      <div id="sprintResultScore"  style="font-size:32px;font-weight:800;color:var(--primary);margin-bottom:4px;"></div>
+      <div id="sprintResultDetail" style="font-size:14px;color:var(--text-muted);margin-bottom:4px;"></div>
+      <div id="sprintResultBest"   style="font-size:12px;color:var(--teal);margin-bottom:1rem;font-weight:600;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="submit-btn" onclick="startSprint()">▶ Play again</button>
+        <button class="nav-btn"    onclick="newSprintRound()">New words →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BLITZ MODE ── -->
+  <div id="blitzPanel" style="display:none;">
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem;flex-wrap:wrap;">
+      <div class="tip-box" style="margin:0;flex:1;font-size:12px;">
+        Tap the correct meaning before the timer runs out. Speed increases every 5 correct answers.
+      </div>
+      <div class="mode-toggle" id="blitzDirToggle" style="flex-shrink:0;">
+        <button class="mode-btn active" data-blitzdir="es2en" onclick="setBlitzDirection('es2en')">ES→EN</button>
+        <button class="mode-btn"        data-blitzdir="en2es" onclick="setBlitzDirection('en2es')">EN→ES</button>
+      </div>
+    </div>
+
+    <!-- Speed tier badge + question counter -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+      <div id="blitzTierBadge" style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:99px;background:var(--primary-light);color:var(--primary);">Beginner</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);" id="blitzQCounter">Q 0 / 20</div>
+      <div style="font-size:12px;font-weight:700;color:var(--teal);" id="blitzScoreDisplay">0 pts</div>
+    </div>
+
+    <!-- Main word card with SVG countdown ring -->
+    <!-- Ring sits behind; text floats on top with no opaque card box -->
+    <div id="blitzWordCard" style="position:relative;text-align:center;margin-bottom:1rem;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <!-- SVG ring — fills the container, pointer-events off -->
+      <svg id="blitzRingSvg" width="180" height="180"
+           style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;">
+        <circle cx="90" cy="90" r="82" fill="none" stroke="var(--border)" stroke-width="7"/>
+        <circle id="blitzRingArc" cx="90" cy="90" r="82" fill="none"
+          stroke="var(--primary)" stroke-width="7"
+          stroke-linecap="round"
+          stroke-dasharray="515" stroke-dashoffset="0"
+          transform="rotate(-90 90 90)"
+          style="transition:stroke 0.3s;"/>
+      </svg>
+      <!-- Text floats above the ring, no background -->
+      <div style="position:relative;z-index:1;padding:0 1rem;">
+        <div id="blitzWordType" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-hint);margin-bottom:6px;"></div>
+        <div id="blitzWord"     style="font-size:28px;font-weight:800;color:var(--header);letter-spacing:-0.5px;line-height:1.2;">Ready?</div>
+        <div id="blitzLevel"    style="font-size:11px;color:var(--text-hint);margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <!-- Four answer buttons -->
+    <div id="blitzOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0.75rem;"></div>
+
+    <!-- Start overlay -->
+    <div id="blitzStartOverlay" style="text-align:center;margin-top:0.5rem;">
+      <button class="submit-btn" style="padding:12px 32px;font-size:15px;" onclick="startBlitz()">▶ Start blitz</button>
+    </div>
+
+    <!-- Game over -->
+    <div id="blitzResult" style="display:none;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-card);overflow:hidden;">
+      <!-- Summary header -->
+      <div style="text-align:center;padding:1.5rem 1.5rem 1rem;">
+        <div id="blitzResultEmoji"  style="font-size:44px;margin-bottom:8px;">🔥</div>
+        <div id="blitzResultTier"   style="font-size:13px;font-weight:700;margin-bottom:4px;"></div>
+        <div id="blitzResultScore"  style="font-size:32px;font-weight:800;color:var(--primary);margin-bottom:4px;"></div>
+        <div id="blitzResultDetail" style="font-size:14px;color:var(--text-muted);margin-bottom:4px;"></div>
+        <div id="blitzResultBest"   style="font-size:12px;color:var(--teal);margin-bottom:1rem;font-weight:600;"></div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button class="submit-btn" onclick="startBlitz()">▶ Play again</button>
+          <button class="nav-btn"    onclick="newBlitzRound()">New words →</button>
+        </div>
+      </div>
+      <!-- Word-by-word round summary -->
+      <div style="border-top:1px solid var(--border);padding:1rem 1.5rem;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:0.6rem;">Round summary</div>
+        <div id="blitzRoundSummary" style="display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
 </main>
 
 <script>
@@ -1373,6 +1723,7 @@ document.querySelectorAll('.nav-tab').forEach(t => {
     t.classList.add('active');
     document.getElementById('tab-' + t.dataset.tab).classList.add('active');
     if (t.dataset.tab === 'progress') renderProgress();
+    if (t.dataset.tab === 'game') { gamePool = buildGamePool(60); updateGameBests(); }
   });
 });
 
@@ -3153,6 +3504,958 @@ function saveProgress() { localStorage.setItem('sm_progress', JSON.stringify(pro
 /* ── Utility ── */
 function shuffle(a) { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 
+
+/* ══ GAME ══ */
+
+// ── Game state ────────────────────────────────────────────────────────────────
+let gameMode       = 'lightning';
+let gameLevel      = 'All';
+let gameCat        = '__smart__';
+let gamePool       = [];      // current word pool for this session
+
+// Lightning state
+let lightningPairs     = [];   // [{es, en, id}]
+let lightningSelected  = null; // {el, side, id}
+let lightningMatched   = 0;
+let lightningStartTime = 0;
+let lightningTimer     = null;
+let lightningTimings   = [];   // ms per pair
+let lightningActive    = false;
+
+// Sprint state
+let sprintPool     = [];
+let sprintIndex    = 0;
+let sprintCurrent  = null;    // {es, en, isDecoy}
+let sprintScore    = 0;
+let sprintStreak   = 0;
+let sprintMult     = 1;
+let sprintCorrect  = 0;
+let sprintWrong    = 0;
+let sprintTimeLeft = 30;
+let sprintInterval = null;
+let sprintActive   = false;
+
+// Personal bests (persisted)
+let gameBests = JSON.parse(localStorage.getItem('sm_gameBests') || '{}');
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function saveGameBests() {
+  localStorage.setItem('sm_gameBests', JSON.stringify(gameBests));
+}
+
+// Build a smart word pool: prioritise words with scores 1-3 (known but not mastered)
+// Mix in some new words and some mastered for variety
+function buildGamePool(limit) {
+  let all = [];
+
+  if (gameCat === '__smart__') {
+    // Cross-category smart mix
+    Object.entries(VOCAB).forEach(([cat, words]) => {
+      words.forEach(w => all.push({...w, _cat: cat}));
+    });
+  } else if (gameCat === '__all__') {
+    Object.entries(VOCAB).forEach(([cat, words]) => {
+      words.forEach(w => all.push({...w, _cat: cat}));
+    });
+  } else {
+    all = (VOCAB[gameCat] || []).map(w => ({...w, _cat: gameCat}));
+  }
+
+  // Level filter
+  if (gameLevel !== 'All') all = all.filter(w => w.level === gameLevel);
+
+  // Skip entries with very long text (bad for small cards)
+  all = all.filter(w => w.es.length <= 30 && w.en.length <= 40);
+
+  if (!all.length) return [];
+
+  // Classify by progress score
+  const scored = all.map(w => {
+    const key = (w._cat || gameCat) + '::' + w.es;
+    const p   = progress[key];
+    const score = p ? (p.score || 0) : -1;
+    return {...w, _score: score};
+  });
+
+  const learning  = scored.filter(w => w._score >= 1 && w._score <= 3); // sweet spot
+  const fresh     = scored.filter(w => w._score === -1);                  // never seen
+  const mastered  = scored.filter(w => w._score >= 4);                    // easy
+  const struggling = scored.filter(w => w._score === 0 && w._seen > 0);   // seen but hard
+
+  // Smart mix: 50% learning, 25% struggling/fresh, 25% mastered
+  const lim = limit || 60;
+  const pool = [
+    ...shuffle(struggling).slice(0, Math.ceil(lim * 0.15)),
+    ...shuffle(learning).slice(0, Math.ceil(lim * 0.50)),
+    ...shuffle(fresh).slice(0, Math.ceil(lim * 0.20)),
+    ...shuffle(mastered).slice(0, Math.ceil(lim * 0.15)),
+  ];
+
+  // Fallback if classification yields too few
+  if (pool.length < 8) return shuffle(all).slice(0, lim);
+  return shuffle(pool).slice(0, lim);
+}
+
+// Populate category selector with vocab categories
+function buildGameCatSelect() {
+  const sel = document.getElementById('gameCatSelect');
+  if (!sel) return;
+  // Remove existing category options (keep first two: smart + all)
+  while (sel.options.length > 2) sel.remove(2);
+  Object.keys(VOCAB).forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    sel.appendChild(opt);
+  });
+}
+
+function onGameCatChange() {
+  gameCat = document.getElementById('gameCatSelect').value;
+  gamePool = buildGamePool(60);
+  updateGameBests();
+}
+
+function onGameLevelChange() {
+  gameLevel = document.getElementById('gameLevelSelect').value;
+  gamePool  = buildGamePool(60);
+  updateGameBests();
+}
+
+function setGameMode(mode) {
+  gameMode = mode;
+  document.querySelectorAll('[data-gamemode]').forEach(b => {
+    b.classList.toggle('active', b.dataset.gamemode === mode);
+  });
+  document.getElementById('lightningPanel').style.display = mode === 'lightning' ? 'block' : 'none';
+  document.getElementById('sprintPanel').style.display    = mode === 'sprint'    ? 'block' : 'none';
+  document.getElementById('blitzPanel').style.display     = mode === 'blitz'     ? 'block' : 'none';
+  stopLightning();
+  stopSprint();
+  stopBlitz();
+  updateGameBests();
+}
+
+function updateGameBests() {
+  const el = document.getElementById('gameBests');
+  if (!el) return;
+  const parts = [];
+  if (gameBests.lightningBest) parts.push(`⚡ Best: <strong>${(gameBests.lightningBest/1000).toFixed(1)}s</strong>`);
+  if (gameBests.sprintBest)    parts.push(`🎯 Best: <strong>${gameBests.sprintBest} pts</strong>`);
+  if (gameBests.blitzBest)     parts.push(`🔥 Best: <strong>${gameBests.blitzBest} pts</strong>`);
+  el.innerHTML = parts.join(' &nbsp;·&nbsp; ');
+}
+
+// ── LIGHTNING MATCH ───────────────────────────────────────────────────────────
+
+function startLightning() {
+  if (!gamePool.length) gamePool = buildGamePool(60);
+  const pool = gamePool.length >= 6 ? gamePool : buildGamePool(60);
+
+  // Pick 6 unique pairs
+  const picked = shuffle([...pool]).slice(0, 6);
+  lightningPairs = picked.map((w, i) => ({
+    es: w.es, en: w.en, id: i, _cat: w._cat, matchTime: 0
+  }));
+
+  lightningMatched  = 0;
+  lightningSelected = null;
+  lightningTimings  = [];
+  lightningActive   = true;
+
+  renderLightningGrid();
+
+  document.getElementById('lightningStart').style.display  = 'none';
+  document.getElementById('lightningResult').style.display = 'none';
+  document.getElementById('lightningCombo').textContent    = '';
+  document.getElementById('lightningPairsLeft').textContent = `0 / ${lightningPairs.length} matched`;
+
+  // Start timer
+  lightningStartTime = performance.now();
+  clearInterval(lightningTimer);
+  lightningTimer = setInterval(() => {
+    if (!lightningActive) return;
+    const elapsed = (performance.now() - lightningStartTime) / 1000;
+    document.getElementById('lightningTimer').textContent = elapsed.toFixed(1) + 's';
+  }, 100);
+}
+
+function newLightningRound() {
+  gamePool = buildGamePool(60); // fresh words
+  startLightning();
+}
+
+function stopLightning() {
+  lightningActive = false;
+  clearInterval(lightningTimer);
+}
+
+function renderLightningGrid() {
+  const grid = document.getElementById('lightningGrid');
+  grid.innerHTML = '';
+
+  // Use two separate column containers so Spanish is always left, English always right
+  // CSS grid with grid-template-columns:1fr 1fr means items fill left-to-right
+  // To get all ES in col 1 and all EN in col 2 we use subgrid trick:
+  // place all cards in order: es[0], en[0], es[1], en[1], ...
+  const esCards = shuffle([...lightningPairs]);
+  const enCards = shuffle([...lightningPairs]);
+
+  // Column headers
+  const esHeader = document.createElement('div');
+  esHeader.style.cssText = 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-hint);padding:2px 4px;';
+  esHeader.textContent = 'Spanish';
+  const enHeader = document.createElement('div');
+  enHeader.style.cssText = 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-hint);padding:2px 4px;';
+  enHeader.textContent = 'English';
+  grid.appendChild(esHeader);
+  grid.appendChild(enHeader);
+
+  // Interleave into the 2-col grid: es[0], en[0], es[1], en[1]...
+  // This keeps each row together visually while filling the correct column
+  for (let i = 0; i < esCards.length; i++) {
+    grid.appendChild(makeMatchCard(esCards[i], 'es'));
+    grid.appendChild(makeMatchCard(enCards[i], 'en'));
+  }
+}
+
+function makeMatchCard(pair, side) {
+  const el = document.createElement('div');
+  el.className = 'match-card ' + side + '-card';
+  el.dataset.id   = pair.id;
+  el.dataset.side = side;
+  el.textContent  = side === 'es' ? pair.es : pair.en;
+  el.onclick      = () => onMatchCardClick(el, pair, side);
+  return el;
+}
+
+function onMatchCardClick(el, pair, side) {
+  if (!lightningActive) return;
+  if (el.classList.contains('matched') || el.classList.contains('disabled')) return;
+
+  if (!lightningSelected) {
+    // First selection
+    lightningSelected = {el, pair, side};
+    el.classList.add('selected');
+    return;
+  }
+
+  // Second selection
+  const first  = lightningSelected;
+  lightningSelected = null;
+  first.el.classList.remove('selected');
+
+  if (first.pair.id === pair.id && first.side !== side) {
+    // ✓ Correct match!
+    const elapsed = performance.now() - lightningStartTime;
+    lightningTimings.push({es: pair.es, time: elapsed});
+    lightningMatched++;
+
+    [first.el, el].forEach(e => {
+      e.classList.add('matched');
+      e.onclick = null;
+    });
+
+    // Combo feedback
+    document.getElementById('lightningCombo').textContent =
+      lightningMatched > 1 ? `${lightningMatched} in a row! 🔥` : '';
+    document.getElementById('lightningPairsLeft').textContent =
+      `${lightningMatched} / ${lightningPairs.length} matched`;
+
+    // Nudge progress score up slightly
+    const key = (pair._cat || gameCat) + '::' + pair.es;
+    if (progress[key]) {
+      progress[key].score = Math.min(5, (progress[key].score || 0) + 0.5);
+      saveProgress();
+    }
+
+    if (lightningMatched === lightningPairs.length) {
+      // Round complete!
+      setTimeout(finishLightning, 300);
+    }
+  } else {
+    // ✗ Wrong
+    [first.el, el].forEach(e => {
+      e.classList.add('wrong');
+      setTimeout(() => e.classList.remove('wrong'), 350);
+    });
+
+    // Nudge progress score down for the wrongly clicked one
+    const wrongPair = first.side !== 'es' ? first.pair : pair;
+    const key = (wrongPair._cat || gameCat) + '::' + wrongPair.es;
+    if (progress[key]) {
+      progress[key].score = Math.max(0, (progress[key].score || 0) - 0.5);
+      saveProgress();
+    }
+  }
+}
+
+function finishLightning() {
+  stopLightning();
+  const totalMs = performance.now() - lightningStartTime;
+  const totalSec = totalMs / 1000;
+
+  // Personal best
+  const key = 'lightningBest';
+  const isNew = !gameBests[key] || totalMs < gameBests[key];
+  if (isNew) { gameBests[key] = totalMs; saveGameBests(); }
+
+  // Find slowest pair (most likely to need review)
+  const sorted = [...lightningTimings].sort((a,b) => b.time - a.time);
+  const slowest = sorted.slice(0, 2).map(t => t.es);
+
+  // Emoji rating
+  let emoji = '⚡', msg = 'Solid!';
+  if (totalSec < 8)  { emoji = '🚀'; msg = 'Lightning fast!'; }
+  else if (totalSec < 12) { emoji = '⚡'; msg = 'Great speed!'; }
+  else if (totalSec < 18) { emoji = '👍'; msg = 'Good — keep practising!'; }
+  else { emoji = '🐢'; msg = 'Keep drilling — speed comes with repetition'; }
+
+  document.getElementById('lightningResultEmoji').textContent = emoji;
+  document.getElementById('lightningResultTime').textContent  = totalSec.toFixed(2) + 's';
+  document.getElementById('lightningResultMsg').textContent   = msg;
+  document.getElementById('lightningResultBest').textContent  = isNew ? '🏆 New personal best!' : `Best: ${(gameBests[key]/1000).toFixed(2)}s`;
+  document.getElementById('lightningSlowWords').textContent   = slowest.length
+    ? `Slowest: ${slowest.join(' · ')} — add these to your review deck`
+    : '';
+
+  document.getElementById('lightningGrid').innerHTML = '';
+  document.getElementById('lightningResult').style.display   = 'block';
+  document.getElementById('lightningPairsLeft').textContent  = '';
+  document.getElementById('lightningTimer').textContent      = totalSec.toFixed(2) + 's';
+  updateGameBests();
+}
+
+// ── SPRINT (True / False) ─────────────────────────────────────────────────────
+
+function startSprint() {
+  if (!gamePool.length) gamePool = buildGamePool(60);
+
+  // Build a sprint pool with decoys interleaved
+  sprintPool   = buildSprintPool();
+  sprintIndex  = 0;
+  sprintScore  = 0;
+  sprintStreak = 0;
+  sprintMult   = 1;
+  sprintCorrect = 0;
+  sprintWrong  = 0;
+  sprintTimeLeft = 30;
+  sprintActive   = true;
+
+  document.getElementById('sprintStartOverlay').style.display = 'none';
+  document.getElementById('sprintResult').style.display       = 'none';
+  document.getElementById('sprintCorrectBtn').disabled = false;
+  document.getElementById('sprintWrongBtn').disabled   = false;
+
+  updateSprintUI();
+  loadSprintCard();
+
+  clearInterval(sprintInterval);
+  sprintInterval = setInterval(() => {
+    if (!sprintActive) return;
+    sprintTimeLeft--;
+    document.getElementById('sprintTimer').textContent = sprintTimeLeft;
+    if (sprintTimeLeft <= 0) finishSprint();
+  }, 1000);
+}
+
+function newSprintRound() {
+  gamePool = buildGamePool(60);
+  startSprint();
+}
+
+function stopSprint() {
+  sprintActive = false;
+  clearInterval(sprintInterval);
+}
+
+// Build a pool of true/false cards — ~50% correct pairs, 50% decoys
+function buildSprintPool() {
+  const pool = shuffle([...gamePool]).slice(0, 40);
+  const cards = [];
+
+  pool.forEach((word, i) => {
+    // Correct pair
+    cards.push({es: word.es, en: word.en, isCorrect: true, _cat: word._cat});
+
+    // Decoy pair — pair this word with a wrong meaning
+    const decoyIdx = (i + 1 + Math.floor(Math.random() * 3)) % pool.length;
+    const decoy    = pool[decoyIdx];
+    if (decoy.en !== word.en) {
+      cards.push({es: word.es, en: decoy.en, isCorrect: false, _cat: word._cat});
+    }
+  });
+
+  return shuffle(cards);
+}
+
+function loadSprintCard() {
+  if (sprintIndex >= sprintPool.length) {
+    // Reshuffle pool
+    sprintPool  = buildSprintPool();
+    sprintIndex = 0;
+  }
+
+  sprintCurrent = sprintPool[sprintIndex];
+  sprintIndex++;
+
+  document.getElementById('sprintWord').textContent    = sprintCurrent.es;
+  document.getElementById('sprintMeaning').textContent = sprintCurrent.en;
+}
+
+function sprintAnswer(userSaysCorrect) {
+  if (!sprintActive || !sprintCurrent) return;
+
+  const isRight = (userSaysCorrect === sprintCurrent.isCorrect);
+  const card    = document.getElementById('sprintCard');
+
+  if (isRight) {
+    sprintCorrect++;
+    sprintStreak++;
+    sprintMult = Math.min(4, 1 + Math.floor(sprintStreak / 4));
+    sprintScore += 10 * sprintMult;
+
+    card.classList.remove('sprint-flash-wrong');
+    card.classList.add('sprint-flash-correct');
+    setTimeout(() => card.classList.remove('sprint-flash-correct'), 350);
+
+    // Nudge progress
+    const key = (sprintCurrent._cat || gameCat) + '::' + sprintCurrent.es;
+    if (progress[key] && sprintCurrent.isCorrect) {
+      progress[key].score = Math.min(5, (progress[key].score || 0) + 0.3);
+      saveProgress();
+    }
+  } else {
+    sprintWrong++;
+    sprintStreak = 0;
+    sprintMult   = 1;
+
+    card.classList.remove('sprint-flash-correct');
+    card.classList.add('sprint-flash-wrong');
+    setTimeout(() => card.classList.remove('sprint-flash-wrong'), 350);
+
+    // Nudge progress down
+    const key = (sprintCurrent._cat || gameCat) + '::' + sprintCurrent.es;
+    if (progress[key]) {
+      progress[key].score = Math.max(0, (progress[key].score || 0) - 0.3);
+      saveProgress();
+    }
+  }
+
+  updateSprintUI();
+  loadSprintCard();
+}
+
+function updateSprintUI() {
+  document.getElementById('sprintScore').textContent  = sprintScore;
+  document.getElementById('sprintStreak').textContent = sprintStreak;
+  document.getElementById('sprintMult').textContent   = sprintMult;
+
+  // Colour the multiplier when > 1
+  const streakEl = document.getElementById('sprintStreak');
+  streakEl.style.color = sprintMult > 1 ? 'var(--amber)' : 'var(--text-muted)';
+}
+
+function finishSprint() {
+  stopSprint();
+
+  document.getElementById('sprintCorrectBtn').disabled = true;
+  document.getElementById('sprintWrongBtn').disabled   = true;
+
+  // Personal best
+  const isNew = !gameBests.sprintBest || sprintScore > gameBests.sprintBest;
+  if (isNew) { gameBests.sprintBest = sprintScore; saveGameBests(); }
+
+  const accuracy = sprintCorrect + sprintWrong > 0
+    ? Math.round(sprintCorrect / (sprintCorrect + sprintWrong) * 100)
+    : 0;
+
+  let emoji = '🎯';
+  if (sprintScore > 400) emoji = '🔥';
+  else if (sprintScore > 250) emoji = '⚡';
+  else if (sprintScore > 100) emoji = '👍';
+
+  document.getElementById('sprintResultEmoji').textContent  = emoji;
+  document.getElementById('sprintResultScore').textContent  = sprintScore + ' pts';
+  document.getElementById('sprintResultDetail').textContent = `${sprintCorrect} correct · ${sprintWrong} wrong · ${accuracy}% accuracy`;
+  document.getElementById('sprintResultBest').textContent   = isNew ? '🏆 New personal best!' : `Best: ${gameBests.sprintBest} pts`;
+
+  document.getElementById('sprintResult').style.display = 'block';
+  document.getElementById('sprintCard').querySelector('#sprintWord').textContent    = 'Round over!';
+  document.getElementById('sprintCard').querySelector('#sprintMeaning').textContent = '';
+  updateGameBests();
+}
+
+// ── Game tab init ─────────────────────────────────────────────────────────────
+function initGameTab() {
+  buildGameCatSelect();
+  gamePool = buildGamePool(60);
+  updateGameBests();
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  // Sprint: ← / f = correct,  → / j = wrong
+  if (sprintActive) {
+    if (e.key === 'ArrowLeft'  || e.key === 'f' || e.key === 'F') sprintAnswer(true);
+    if (e.key === 'ArrowRight' || e.key === 'j' || e.key === 'J') sprintAnswer(false);
+  }
+  // Blitz: 1-4 to select answer option
+  if (blitzActive && !blitzAnswered) {
+    const n = parseInt(e.key);
+    if (n >= 1 && n <= 4) {
+      const btns = document.querySelectorAll('.blitz-option:not([disabled])');
+      if (btns[n-1]) btns[n-1].click();
+    }
+  }
+});
+
+
+
+
+// ── BLITZ MODE ────────────────────────────────────────────────────────────────
+
+// Speed tiers: {label, duration ms, points per correct}
+const BLITZ_TIERS = [
+  { label: 'Beginner',     ms: 4000, pts: 10,  cssClass: 'tier-beginner'     },
+  { label: 'Intermediate', ms: 3000, pts: 20,  cssClass: 'tier-intermediate' },
+  { label: 'Advanced',     ms: 2000, pts: 35,  cssClass: 'tier-advanced'     },
+  { label: 'Expert',       ms: 1500, pts: 60,  cssClass: 'tier-expert'       },
+];
+
+// State
+let blitzDirection  = 'es2en'; // 'es2en' | 'en2es'
+let blitzRoundLog   = [];      // [{es, en, chosen, correct, wasRight}] — for round summary
+let blitzPool       = [];
+let blitzIndex      = 0;
+let blitzScore      = 0;
+let blitzStreak     = 0;
+let blitzCorrect    = 0;
+let blitzWrong      = 0;
+let blitzTierIndex  = 0;
+let blitzActive     = false;
+let blitzTimer      = null;   // rAF handle
+let blitzDeadline   = 0;      // timestamp when current question expires
+let blitzAnswered   = false;  // prevent double-tap
+let blitzGeneration = 0;      // incremented each question — invalidates stale rAF
+const BLITZ_Q_TOTAL = 20;     // questions per round
+let blitzQCount     = 0;      // questions answered this round
+
+const BLITZ_RING_CIRCUMFERENCE = 2 * Math.PI * 82; // ≈ 515.2
+
+function setBlitzDirection(dir) {
+  blitzDirection = dir;
+  document.querySelectorAll('[data-blitzdir]').forEach(b => {
+    b.classList.toggle('active', b.dataset.blitzdir === dir);
+  });
+}
+
+function startBlitz() {
+  if (!gamePool.length) gamePool = buildGamePool(120);
+  // Ensure pool is at least 3× round length for variety
+  let blitzSource = [...gamePool];
+  if (blitzSource.length < BLITZ_Q_TOTAL * 3) {
+    // Widen draw — pull from all vocab at current level regardless of progress score
+    let wider = [];
+    const allW = Object.entries(VOCAB);
+    allW.forEach(([cat, words]) => words.forEach(w => wider.push({...w, _cat: cat})));
+    if (gameLevel !== 'All') wider = wider.filter(w => w.level === gameLevel);
+    wider = wider.filter(w => w.es.length <= 30 && w.en.length <= 40);
+    blitzSource = shuffle(wider).slice(0, 120);
+  }
+  blitzPool     = shuffle(blitzSource);
+  blitzIndex    = 0;
+  blitzScore    = 0;
+  blitzStreak   = 0;
+  blitzCorrect  = 0;
+  blitzWrong    = 0;
+  blitzTierIndex = 0;
+  blitzQCount    = 0;
+  blitzGeneration = 0;
+  blitzRoundLog  = [];
+  blitzActive    = true;
+
+  document.getElementById('blitzStartOverlay').style.display = 'none';
+  document.getElementById('blitzResult').style.display       = 'none';
+  document.getElementById('blitzRingSvg').style.opacity      = '1';
+
+  updateBlitzTierBadge();
+  loadBlitzQuestion();
+}
+
+function newBlitzRound() {
+  gamePool = buildGamePool(80);
+  startBlitz();
+}
+
+function stopBlitz() {
+  blitzActive = false;
+  cancelAnimationFrame(blitzTimer);
+  document.getElementById('blitzRingSvg').style.opacity = '0';
+}
+
+function loadBlitzQuestion() {
+  if (!blitzActive) return;
+  if (blitzIndex >= blitzPool.length) {
+    blitzPool  = shuffle([...gamePool]);
+    blitzIndex = 0;
+  }
+
+  blitzAnswered = false;
+  const word = blitzPool[blitzIndex++];
+
+  // Show word — use blitz-specific direction toggle
+  document.getElementById('blitzWord').textContent     = blitzDirection === 'en2es' ? word.en : word.es;
+  document.getElementById('blitzWordType').textContent = word.type || '';
+  document.getElementById('blitzLevel').textContent    = word.level ? '[' + word.level + ']' : '';
+
+  // Build 4 options: 1 correct + 3 distractors
+  const correct = blitzDirection === 'en2es' ? word.es : word.en;
+  const distractors = buildBlitzDistractors(word, correct, 3);
+  const options = shuffle([correct, ...distractors]);
+
+  // Render option buttons
+  const container = document.getElementById('blitzOptions');
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className   = 'blitz-option';
+    btn.textContent = opt;
+    btn.onclick     = () => answerBlitz(btn, opt, correct, word);
+    container.appendChild(btn);
+  });
+
+  // Start countdown ring — increment generation so any stale rAF dies
+  blitzGeneration++;
+  const tier = BLITZ_TIERS[blitzTierIndex];
+  blitzDeadline = performance.now() + tier.ms;
+  const myGen = blitzGeneration;
+  blitzTimer = requestAnimationFrame(() => tickBlitzRing(myGen));
+}
+
+// Build 3 distractors — similar category, similar level, different meaning
+function buildBlitzDistractors(word, correctAnswer, count) {
+  const allWords = Object.values(VOCAB).flat();
+  const isSameDir = blitzDirection !== 'en2es'; // es2en: answer is English
+
+  // Prefer same category, then same level, then any
+  const cat = word._cat || '';
+  const sameCat = (VOCAB[cat] || []).filter(w => {
+    const ans = isSameDir ? w.en : w.es;
+    return ans !== correctAnswer && ans.length <= 40;
+  });
+  const sameLevel = allWords.filter(w => {
+    const ans = isSameDir ? w.en : w.es;
+    return w.level === word.level && ans !== correctAnswer && ans.length <= 40;
+  });
+  const anyWord = allWords.filter(w => {
+    const ans = isSameDir ? w.en : w.es;
+    return ans !== correctAnswer && ans.length <= 40;
+  });
+
+  const pool = shuffle([
+    ...sameCat.slice(0, 20),
+    ...sameLevel.slice(0, 20),
+    ...anyWord.slice(0, 30),
+  ]);
+
+  // Pick unique answers
+  const seen = new Set([correctAnswer]);
+  const result = [];
+  for (const w of pool) {
+    const ans = isSameDir ? w.en : w.es;
+    if (!seen.has(ans)) {
+      seen.add(ans);
+      result.push(ans);
+      if (result.length === count) break;
+    }
+  }
+  // Pad if needed
+  while (result.length < count) result.push('—');
+  return result;
+}
+
+// rAF-based ring countdown
+function tickBlitzRing(myGen) {
+  // If generation has changed, this rAF loop is stale — stop silently
+  if (myGen !== blitzGeneration) return;
+  if (!blitzActive || blitzAnswered) return;
+
+  const now       = performance.now();
+  const remaining = Math.max(0, blitzDeadline - now);
+  const tier      = BLITZ_TIERS[blitzTierIndex];
+  const fraction  = remaining / tier.ms;  // 1.0 → 0.0
+
+  // Update SVG ring
+  const arc = document.getElementById('blitzRingArc');
+  if (arc) {
+    const offset = BLITZ_RING_CIRCUMFERENCE * (1 - fraction);
+    arc.style.strokeDashoffset = offset;
+    arc.className.baseVal = fraction > 0.5 ? 'ring-ok' : fraction > 0.25 ? 'ring-warning' : 'ring-danger';
+  }
+
+  if (remaining <= 0) {
+    timeUpBlitz();
+    return;
+  }
+
+  blitzTimer = requestAnimationFrame(() => tickBlitzRing(myGen));
+}
+
+function timeUpBlitz() {
+  if (!blitzActive || blitzAnswered) return; // guard against stale rAF
+  blitzAnswered = true;
+  // Log as timed out (wrong)
+  const timedWord = blitzPool[(blitzIndex - 1 + blitzPool.length) % blitzPool.length];
+  if (timedWord) {
+    const timedCorrect = blitzDirection === 'en2es' ? timedWord.es : timedWord.en;
+    blitzRoundLog.push({
+      es: timedWord.es, en: timedWord.en,
+      shown: blitzDirection === 'en2es' ? timedWord.en : timedWord.es,
+      correct: timedCorrect, chosen: '(time out)',
+      wasRight: false, timedOut: true
+    });
+  }
+  blitzWrong++;
+  blitzStreak = 0;
+
+  // Flash word card red briefly
+  const card = document.getElementById('blitzWordCard');
+  card.classList.add('blitz-card-wrong');
+  setTimeout(() => card.classList.remove('blitz-card-wrong'), 400);
+
+  // Highlight correct answer green
+  const container = document.getElementById('blitzOptions');
+  const word = blitzPool[(blitzIndex - 1 + blitzPool.length) % blitzPool.length];
+  const correct = cardDirection === 'en2es' ? word.es : word.en;
+  container.querySelectorAll('.blitz-option').forEach(btn => {
+    btn.disabled = true;
+    if (btn.textContent === correct) btn.classList.add('reveal');
+  });
+
+  // Knock tier back one level if not already at bottom
+  if (blitzTierIndex > 0) {
+    blitzTierIndex--;
+    updateBlitzTierBadge();
+  }
+
+  updateBlitzScoreDisplay();
+  nudgeProgress(word, false);
+
+  // Count timed-out question and check for round end
+  blitzQCount++;
+  updateBlitzQCounter();
+  if (blitzQCount >= BLITZ_Q_TOTAL) {
+    setTimeout(finishBlitz, 900);
+  } else {
+    setTimeout(() => { if (blitzActive) loadBlitzQuestion(); }, 800);
+  }
+}
+
+function answerBlitz(btn, chosen, correct, word) {
+  if (!blitzActive || blitzAnswered) return;
+  blitzAnswered = true;
+  blitzGeneration++;
+  cancelAnimationFrame(blitzTimer);
+
+  // Disable all options immediately
+  const container = document.getElementById('blitzOptions');
+  container.querySelectorAll('.blitz-option').forEach(b => b.disabled = true);
+
+  // Log this question for round summary
+  blitzRoundLog.push({
+    es: word.es, en: word.en,
+    shown: blitzDirection === 'en2es' ? word.en : word.es,
+    correct, chosen,
+    wasRight: chosen === correct
+  });
+
+  if (chosen === correct) {
+    // ✓ Correct
+    btn.classList.add('correct');
+    blitzCorrect++;
+    blitzStreak++;
+
+    const tier = BLITZ_TIERS[blitzTierIndex];
+    // Bonus pts for speed: up to 2× for answering in first 25% of time
+    const elapsed   = BLITZ_TIERS[blitzTierIndex].ms - (blitzDeadline - performance.now());
+    const speedRatio = Math.max(0, 1 - elapsed / tier.ms);
+    const speedBonus = speedRatio > 0.75 ? 2 : speedRatio > 0.5 ? 1.5 : 1;
+    blitzScore += Math.round(tier.pts * speedBonus);
+
+    bumpStreak();
+    nudgeProgress(word, true);
+
+    // Level up every 5 correct
+    if (blitzStreak > 0 && blitzStreak % 5 === 0 && blitzTierIndex < BLITZ_TIERS.length - 1) {
+      blitzTierIndex++;
+      updateBlitzTierBadge();
+      // Brief celebration flash on tier badge
+      const badge = document.getElementById('blitzTierBadge');
+      badge.style.transform = 'scale(1.2)';
+      setTimeout(() => badge.style.transform = '', 300);
+    }
+
+    updateBlitzScoreDisplay();
+
+    blitzQCount++;
+    updateBlitzQCounter();
+    if (blitzQCount >= BLITZ_Q_TOTAL) {
+      setTimeout(finishBlitz, 400);
+    } else {
+      setTimeout(() => { if (blitzActive) loadBlitzQuestion(); }, 350);
+    }
+
+  } else {
+    // ✗ Wrong
+    btn.classList.add('wrong');
+    // Reveal correct answer
+    container.querySelectorAll('.blitz-option').forEach(b => {
+      if (b.textContent === correct) b.classList.add('reveal');
+    });
+
+    blitzWrong++;
+    blitzStreak = 0;
+    if (blitzTierIndex > 0) blitzTierIndex--;
+    updateBlitzTierBadge();
+    nudgeProgress(word, false);
+    updateBlitzScoreDisplay();
+
+    blitzQCount++;
+    updateBlitzQCounter();
+    if (blitzQCount >= BLITZ_Q_TOTAL) {
+      setTimeout(finishBlitz, 750);
+    } else {
+      setTimeout(() => { if (blitzActive) loadBlitzQuestion(); }, 700);
+    }
+  }
+}
+
+function nudgeProgress(word, correct) {
+  const key = (word._cat || gameCat) + '::' + word.es;
+  if (!progress[key]) progress[key] = {seen: 0, correct: 0, score: 0};
+  progress[key].seen++;
+  if (correct) {
+    progress[key].correct++;
+    progress[key].score = Math.min(5, (progress[key].score || 0) + 0.4);
+  } else {
+    progress[key].score = Math.max(0, (progress[key].score || 0) - 0.4);
+  }
+  saveProgress();
+}
+
+function updateBlitzTierBadge() {
+  const tier  = BLITZ_TIERS[blitzTierIndex];
+  const badge = document.getElementById('blitzTierBadge');
+  if (!badge) return;
+  badge.textContent = tier.label;
+  badge.className   = tier.cssClass;
+}
+
+function updateBlitzScoreDisplay() {
+  const scoreEl  = document.getElementById('blitzScoreDisplay');
+  const qEl      = document.getElementById('blitzQCounter');
+  const tierEl   = document.getElementById('blitzStreakDisplay'); // Sprint element — guard it
+  if (scoreEl) scoreEl.textContent = blitzScore + ' pts';
+  // Streak shown inline in QCounter area for blitz
+  if (qEl && blitzActive) qEl.textContent = `Q ${blitzQCount} / ${BLITZ_Q_TOTAL}  ·  🔥 ${blitzStreak}`;
+  if (tierEl) tierEl.textContent = blitzStreak; // Sprint uses this — safe to update if present
+}
+
+function updateBlitzQCounter() {
+  const el = document.getElementById('blitzQCounter');
+  if (el) el.textContent = `Q ${blitzQCount} / ${BLITZ_Q_TOTAL}`;
+}
+
+function finishBlitz() {
+  stopBlitz();
+
+  const key    = 'blitzBest';
+  const isNew  = !gameBests[key] || blitzScore > gameBests[key];
+  if (isNew) { gameBests[key] = blitzScore; saveGameBests(); }
+
+  const accuracy = blitzCorrect + blitzWrong > 0
+    ? Math.round(blitzCorrect / (blitzCorrect + blitzWrong) * 100)
+    : 0;
+
+  // Show highest tier reached (account for drop-back on last wrong answer)
+  const peakTierIdx = Math.min(blitzTierIndex + (blitzWrong > 0 && blitzQCount >= BLITZ_Q_TOTAL ? 0 : 0), BLITZ_TIERS.length - 1);
+  const tier   = BLITZ_TIERS[peakTierIdx];
+  let emoji    = '🔥';
+  if (blitzScore > 500)      emoji = '🚀';
+  else if (blitzScore > 300) emoji = '⚡';
+  else if (blitzScore > 150) emoji = '🔥';
+  else                        emoji = '💪';
+
+  document.getElementById('blitzResultEmoji').textContent  = emoji;
+  document.getElementById('blitzResultTier').textContent   = `Reached: ${tier.label}`;
+  document.getElementById('blitzResultScore').textContent  = blitzScore + ' pts';
+  document.getElementById('blitzResultDetail').textContent =
+    `${blitzCorrect} correct · ${blitzWrong} wrong · ${accuracy}% accuracy`;
+  document.getElementById('blitzResultBest').textContent   =
+    isNew ? '🏆 New personal best!' : `Best: ${gameBests[key]} pts`;
+
+  document.getElementById('blitzResult').style.display = 'block';
+  document.getElementById('blitzOptions').innerHTML    = '';
+  document.getElementById('blitzWord').textContent     = 'Round over!';
+  document.getElementById('blitzWordType').textContent = '';
+  document.getElementById('blitzLevel').textContent    = '';
+  document.getElementById('blitzQCounter').textContent = `Q ${BLITZ_Q_TOTAL} / ${BLITZ_Q_TOTAL}`;
+  document.getElementById('blitzRingSvg').style.opacity = '0';
+
+  // Render word-by-word round summary
+  renderBlitzSummary();
+  updateGameBests();
+}
+
+function renderBlitzSummary() {
+  const container = document.getElementById('blitzRoundSummary');
+  if (!container) return;
+  container.innerHTML = '';
+
+  blitzRoundLog.forEach(item => {
+    const row = document.createElement('div');
+    row.style.cssText = [
+      'display:flex',
+      'align-items:center',
+      'gap:8px',
+      'padding:5px 8px',
+      'border-radius:var(--radius-xs)',
+      'font-size:13px',
+      item.wasRight
+        ? 'background:var(--teal-light);color:var(--teal-dark);'
+        : 'background:var(--error-bg);color:var(--error);'
+    ].join(';');
+
+    const icon = document.createElement('span');
+    icon.textContent = item.timedOut ? '⏱' : item.wasRight ? '✓' : '✗';
+    icon.style.cssText = 'font-weight:700;font-size:14px;flex-shrink:0;width:18px;';
+
+    const wordPair = document.createElement('span');
+    wordPair.style.cssText = 'flex:1;font-weight:600;';
+    wordPair.textContent = item.es + '  =  ' + item.en;
+
+    row.appendChild(icon);
+    row.appendChild(wordPair);
+
+    // Show what they chose if wrong
+    if (!item.wasRight && !item.timedOut) {
+      const chose = document.createElement('span');
+      chose.style.cssText = 'font-size:11px;opacity:0.75;flex-shrink:0;';
+      chose.textContent = '→ picked "' + item.chosen + '"';
+      row.appendChild(chose);
+    } else if (item.timedOut) {
+      const to = document.createElement('span');
+      to.style.cssText = 'font-size:11px;opacity:0.75;flex-shrink:0;';
+      to.textContent = 'timed out';
+      row.appendChild(to);
+    }
+
+    container.appendChild(row);
+  });
+}
+
+
 /* ── Init ── */
 function init() {
   mergeVocab();
@@ -3172,6 +4475,7 @@ function init() {
   loadSpeakPhrase();
   loadListenPhrase();
   buildDictDeck();
+  initGameTab();
   loadVoices();
   document.getElementById('streakCount').textContent = settings.streak || 0;
 }
