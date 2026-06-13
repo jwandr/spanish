@@ -4400,14 +4400,43 @@ function onVoiceChange() {
 }
 
 // ── TTS core ──────────────────────────────────────────────────────────────────
-function speak(text, rate, onEnd) {
-  speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'es-MX';
-  utter.rate = rate || speakRate;
-  if (selectedVoice) utter.voice = selectedVoice;
-  if (onEnd) utter.onend = onEnd;
-  speechSynthesis.speak(utter);
+async function speak(text, voice = "es-MX-DaliaNeural") {
+  try {
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ text, voice })
+    });
+
+    if (!res.ok) throw new Error("Azure failed");
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    const audio = new Audio(url);
+    audio.play();
+
+  } catch (err) {
+    console.warn("Azure failed → fallback");
+
+    fallbackSpeak(text);
+  }
+}
+
+function fallbackSpeak(text) {
+  const voices = speechSynthesis.getVoices();
+
+  const voice =
+    voices.find(v => v.lang.startsWith("es") && !v.name.includes("Zarvox"))
+    || voices[0];
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.voice = voice;
+  utterance.lang = "es-ES";
+
+  speechSynthesis.speak(utterance);
 }
 
 function setSpeed(rate) {
