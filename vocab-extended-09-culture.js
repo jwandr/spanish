@@ -3,7 +3,7 @@
 
 const VOCAB_EXT_09 = {
 
-"Religion & Beliefs": [
+"Latin America": [
 {es:"la iglesia",en:"church",type:"noun",ex:"La iglesia colonial es del siglo XVI.",hint:"ecclesiastical → iglesia",level:"A1"},
 {es:"la catedral",en:"cathedral",type:"noun",ex:"La catedral de Lima es impresionante.",hint:"cathedral → catedral",level:"A1"},
 {es:"el templo",en:"temple",type:"noun",ex:"El templo inca está bien conservado.",hint:"temple → templo",level:"A1"},
@@ -37,10 +37,7 @@ const VOCAB_EXT_09 = {
 {es:"ofrendar",en:"to make an offering",type:"verb",ex:"Ofrenda flores a los ancestros.",hint:"",level:"B1"},
 {es:"la ofrenda",en:"offering / altar offering",type:"noun",ex:"La ofrenda del Día de Muertos.",hint:"offer → ofrenda",level:"A2"},
 {es:"el difunto",en:"the deceased",type:"noun",ex:"Recordamos a los difuntos.",hint:"defunct → difunto",level:"A2"},
-{es:"el más allá",en:"the afterlife / the beyond",type:"noun",ex:"Cree en el más allá.",hint:"más = more, allá = beyond",level:"B1"}
-],
-
-"Festivals & Celebrations": [
+{es:"el más allá",en:"the afterlife / the beyond",type:"noun",ex:"Cree en el más allá.",hint:"más = more, allá = beyond",level:"B1"},
 {es:"la fiesta",en:"party / festival / public holiday",type:"noun",ex:"¡Qué fiesta tan animada!",hint:"fiesta → fiesta",level:"A1"},
 {es:"el festejo",en:"celebration / festivities",type:"noun",ex:"Los festejos duraron tres días.",hint:"festejar = to celebrate",level:"A2"},
 {es:"el carnaval",en:"carnival",type:"noun",ex:"El carnaval de Barranquilla es famoso.",hint:"carnival → carnaval",level:"A1"},
@@ -82,10 +79,7 @@ const VOCAB_EXT_09 = {
 {es:"el folclore",en:"folklore / folk culture",type:"noun",ex:"El folclore andino es rico.",hint:"folklore → folclore",level:"A2"},
 {es:"la artesanía",en:"handicraft",type:"noun",ex:"Compré artesanía en el mercado.",hint:"artisan → artesanía",level:"A2"},
 {es:"el tejido",en:"weaving / textile",type:"noun",ex:"El tejido andino tiene diseños únicos.",hint:"tejer = to weave",level:"A2"},
-{es:"bordado",en:"embroidered",type:"adjective",ex:"Un mantel bordado a mano.",hint:"bordar = to embroider",level:"A2"}
-],
-
-"Latin American Culture & Customs": [
+{es:"bordado",en:"embroidered",type:"adjective",ex:"Un mantel bordado a mano.",hint:"bordar = to embroider",level:"A2"},
 {es:"el machismo",en:"machismo / male chauvinism",type:"noun",ex:"El machismo es un problema cultural.",hint:"macho → machismo",level:"B1"},
 {es:"la hospitalidad",en:"hospitality",type:"noun",ex:"La hospitalidad latinoamericana es famosa.",hint:"hospitality → hospitalidad",level:"A2"},
 {es:"el regateo",en:"haggling",type:"noun",ex:"El regateo es normal en los mercados.",hint:"",level:"A2"},
@@ -125,6 +119,7 @@ const VOCAB_EXT_09 = {
 {es:"la chicharrón",en:"pork crackling / fried pork skin",type:"noun",ex:"El chicharrón es muy popular.",hint:"",level:"A2"},
 {es:"la mazorca",en:"corn on the cob",type:"noun",ex:"Come una mazorca con limón y chile.",hint:"",level:"A2"},
 {es:"el mercado de artesanías",en:"craft market",type:"noun",ex:"Compramos souvenirs en el mercado de artesanías.",hint:"",level:"A1"}
-]
+],
 
 };
+

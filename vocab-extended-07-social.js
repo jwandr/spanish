@@ -3,7 +3,7 @@
 
 const VOCAB_EXT_07 = {
 
-"Relationships & Social Life": [
+"People & Relationships": [
 {es:"la amistad",en:"friendship",type:"noun",ex:"Nuestra amistad dura hace veinte años.",hint:"amicable → amistad",level:"A2"},
 {es:"el afecto",en:"affection",type:"noun",ex:"Le tiene mucho afecto.",hint:"affection → afecto",level:"A2"},
 {es:"el cariño",en:"affection / fondness / term of endearment",type:"noun",ex:"Le doy un abrazo con mucho cariño.",hint:"",level:"A2"},
@@ -73,10 +73,7 @@ const VOCAB_EXT_07 = {
 {es:"manipular",en:"to manipulate",type:"verb",ex:"Intentó manipularme.",hint:"",level:"B1"},
 {es:"el abuso",en:"abuse",type:"noun",ex:"El abuso emocional es grave.",hint:"abuse → abuso",level:"B1"},
 {es:"el acoso",en:"harassment / bullying",type:"noun",ex:"El acoso laboral es ilegal.",hint:"",level:"B1"},
-{es:"acosar",en:"to harass / bully",type:"verb",ex:"Lo acosaron en el trabajo.",hint:"",level:"B1"}
-],
-
-"Social Situations & Events": [
+{es:"acosar",en:"to harass / bully",type:"verb",ex:"Lo acosaron en el trabajo.",hint:"",level:"B1"},
 {es:"la reunión",en:"gathering / meeting",type:"noun",ex:"Organizamos una reunión familiar.",hint:"reunion → reunión",level:"A1"},
 {es:"la tertulia",en:"get-together / informal discussion group",type:"noun",ex:"Hacemos una tertulia literaria los jueves.",hint:"",level:"B1"},
 {es:"el encuentro",en:"meeting / encounter",type:"noun",ex:"Fue un encuentro inesperado.",hint:"encounter → encuentro",level:"A2"},
@@ -118,6 +115,7 @@ const VOCAB_EXT_07 = {
 {es:"hacer amigos",en:"to make friends",type:"phrase",ex:"Es fácil hacer amigos aquí.",hint:"",level:"A1"},
 {es:"la red de contactos",en:"network / contacts",type:"noun",ex:"Tiene una buena red de contactos.",hint:"red = network",level:"B1"},
 {es:"el ambiente social",en:"social scene",type:"noun",ex:"El ambiente social de la ciudad es activo.",hint:"",level:"B1"}
-]
+],
 
 };
+

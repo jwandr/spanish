@@ -691,6 +691,7 @@
   <script src="vocab-extended-chunks.js"></script>
   <script src="vocab-extended-medical.js"></script>
   <script src="vocab-extended-wildlife.js"></script>
+  <script src="vocab-extended-b2.js"></script>
 </head>
 <body>
 
@@ -1587,7 +1588,8 @@ function mergeVocab() {
    typeof VOCAB_EXT_CONNECTORS!=='undefined'?VOCAB_EXT_CONNECTORS:null,
    typeof VOCAB_EXT_CHUNKS!=='undefined'?VOCAB_EXT_CHUNKS:null,
    typeof VOCAB_EXT_MEDICAL!=='undefined'?VOCAB_EXT_MEDICAL:null,
-   typeof VOCAB_EXT_WILDLIFE!=='undefined'?VOCAB_EXT_WILDLIFE:null].forEach(ext => {
+   typeof VOCAB_EXT_WILDLIFE!=='undefined'?VOCAB_EXT_WILDLIFE:null,
+   typeof VOCAB_EXT_B2!=='undefined'?VOCAB_EXT_B2:null].forEach(ext => {
     if (!ext) return;
     Object.entries(ext).forEach(([cat, words]) => {
       if (VOCAB[cat]) {
@@ -1829,7 +1831,7 @@ const TENSES = {
     ]
   }
 
-};;
+};
 
 const SPEAK_PHRASES = {
 
@@ -1929,7 +1931,62 @@ const SPEAK_PHRASES = {
   {es:"Hay que hablar con él hoy.",en:"One must speak with him today.",phonetic:"AI ke a-BLAR kon el OI",notes:"H is ALWAYS silent in Spanish. Hay = 'eye', hablar = a-BLAR."},
   {es:"¿Por qué no fuiste ayer?",en:"Why didn't you go yesterday?",phonetic:"por KE no FWIS-te a-YER",notes:"Por qué (why) = two words + accent. Fuiste = preterite of ir."},
   {es:"Me gustan las gambas con ajo.",en:"I like prawns with garlic.",phonetic:"me GOOS-tan las GAM-bas kon A-ho",notes:"Ajo: A-ho. J = H. Gustan (plural subject). Note: gambas = Spain."}
-]
+],
+
+
+  "Medical & Emergencies": [
+    {es:"No me siento bien — necesito un médico.",          en:"I don't feel well — I need a doctor.",              phonetic:"no me SYEN-to BYEN — ne-se-SI-to un ME-di-ko",   notes:"Direct and clear. Use in hotels, tour offices, anywhere."},
+    {es:"¿Dónde está la farmacia más cercana?",            en:"Where is the nearest pharmacy?",                   phonetic:"DON-de es-TA la far-MA-sya mas ser-KA-na",        notes:"más cercana = nearest (feminine)"},
+    {es:"Me duele mucho aquí.",                            en:"It hurts a lot here.",                             phonetic:"me DWE-le MU-cho a-KI",                           notes:"Point to the area. me duele = it hurts me."},
+    {es:"¿Tiene algo para el dolor de cabeza?",            en:"Do you have something for a headache?",            phonetic:"TYE-ne AL-go PA-ra el do-LOR de ka-BE-sa",        notes:"The most useful pharmacy opener."},
+    {es:"Creo que tengo el soroche.",                      en:"I think I have altitude sickness.",                phonetic:"KRE-o ke TEN-go el so-RO-che",                    notes:"soroche = altitude sickness (Andean term). Also: mal de altura."},
+    {es:"Soy alérgico a la penicilina.",                   en:"I'm allergic to penicillin.",                     phonetic:"soy a-LER-hi-ko a la pe-ni-si-LI-na",             notes:"alérgico (m) / alérgica (f). Change to whatever applies."},
+    {es:"¿Cada cuántas horas debo tomarlo?",               en:"How often should I take it?",                    phonetic:"KA-da KWAN-tas O-ras DE-bo to-MAR-lo",            notes:"debo = I should/must. tomarlo = take it."},
+    {es:"¡Llame a una ambulancia, por favor!",             en:"Call an ambulance, please!",                      phonetic:"LYA-me a U-na am-bu-LAN-sya por fa-BOR",          notes:"¡Llame! = imperative (formal). Emergency phrase."},
+    {es:"Tengo diarrea y vómitos desde ayer.",             en:"I've had diarrhoea and vomiting since yesterday.", phonetic:"TEN-go dya-RRE-a i BO-mi-tos DES-de a-YER",      notes:"desde ayer = since yesterday."},
+    {es:"Necesito aclimatarme antes de hacer trekking.",   en:"I need to acclimatise before trekking.",          phonetic:"ne-se-SI-to a-kli-ma-TAR-me AN-tes de a-SER",     notes:"aclimatarme = reflexive infinitive."},
+  ],
+
+  "Wildlife & Guided Tours": [
+    {es:"¿Qué animal es ese que está en el árbol?",        en:"What animal is that one in the tree?",            phonetic:"ke a-ni-MAL es E-se ke es-TA en el AR-bol",        notes:"ese = that one (near them). Point confidently."},
+    {es:"¿Cómo se llama ese pájaro?",                     en:"What is that bird called?",                      phonetic:"KO-mo se LYA-ma E-se PA-ha-ro",                   notes:"Works for any animal or plant."},
+    {es:"¿Es peligroso acercarse?",                       en:"Is it dangerous to approach?",                   phonetic:"es pe-li-GRO-so a-ser-KAR-se",                    notes:"acercarse = to approach/get closer."},
+    {es:"¿Es endémico de esta zona?",                     en:"Is it endemic to this area?",                    phonetic:"es en-DE-mi-ko de ES-ta SO-na",                   notes:"endémico = only found here."},
+    {es:"¿Cuál es la mejor época para ver ballenas?",     en:"What's the best time of year to see whales?",    phonetic:"kwal es la me-HOR E-po-ka PA-ra ber ba-LYE-nas",  notes:"época = period/season. Swap ballenas for any wildlife."},
+    {es:"¿A qué hora sale la excursión mañana?",          en:"What time does tomorrow's excursion leave?",     phonetic:"a ke O-ra SA-le la eks-kur-SYON ma-NYA-na",       notes:"sale = departs (salir)."},
+    {es:"¿Podemos acercarnos más sin asustarlos?",        en:"Can we get closer without scaring them?",        phonetic:"po-DE-mos a-ser-KAR-nos mas sin as-us-TAR-los",   notes:"acercarnos = get closer (us). asustarlos = scare them."},
+    {es:"¡Increíble! Nunca había visto algo así.",        en:"Incredible! I'd never seen anything like it.",   phonetic:"in-kre-I-ble NUN-ka a-BI-a BIS-to AL-go a-SI",    notes:"había visto = pluperfect. Shows genuine amazement."},
+    {es:"¿Están en peligro de extinción?",                en:"Are they endangered?",                           phonetic:"es-TAN en pe-LI-gro de eks-tin-SYON",              notes:"peligro de extinción = endangered."},
+    {es:"¿Qué come normalmente?",                         en:"What does it normally eat?",                     phonetic:"ke KO-me nor-mal-MEN-te",                         notes:"come = eats (comer). normalmente = normally/usually."},
+  ],
+
+  "Ground Transport & Borders": [
+    {es:"¿A qué hora sale el próximo autobús para…?",     en:"What time does the next bus to… leave?",         phonetic:"a ke O-ra SA-le el PROK-si-mo ow-to-BUS PA-ra",   notes:"próximo = next. Fill in the destination."},
+    {es:"¿Cuánto tarda en llegar a…?",                   en:"How long does it take to get to…?",              phonetic:"KWAN-to TAR-da en lye-GAR a",                     notes:"tardar en = to take time to."},
+    {es:"¿Hay un colectivo que vaya a…?",                en:"Is there a shared minibus going to…?",            phonetic:"ay un ko-LEK-ti-bo ke BA-ya a",                   notes:"colectivo = shared transport. vaya = subjunctive of ir."},
+    {es:"¿Cuánto cuesta el boleto de ida y vuelta?",      en:"How much is the return ticket?",                 phonetic:"KWAN-to KWES-ta el bo-LE-to de I-da i BWEL-ta",   notes:"ida y vuelta = return. solo ida = one way."},
+    {es:"Me han robado la mochila.",                      en:"My backpack has been stolen.",                   phonetic:"me an ro-BA-do la mo-CHI-la",                      notes:"me han robado = they have stolen from me."},
+    {es:"He perdido el pasaporte — ¿qué hago?",          en:"I've lost my passport — what do I do?",          phonetic:"e per-DI-do el pa-sa-POR-te ke A-go",              notes:"he perdido = I have lost. ¿qué hago? = what do I do?"},
+    {es:"¿Me puede dar un recibo, por favor?",            en:"Could you give me a receipt, please?",           phonetic:"me PWE-de dar un re-SI-bo por fa-BOR",             notes:"recibo = receipt. Essential for insurance claims."},
+    {es:"El precio me parece demasiado alto.",            en:"The price seems too high to me.",                phonetic:"el PRE-syo me pa-RE-se de-ma-SYA-do AL-to",        notes:"parece = seems. Polite negotiation opener."},
+    {es:"¿Necesito visado para cruzar la frontera?",      en:"Do I need a visa to cross the border?",          phonetic:"ne-se-SI-to bi-SA-do PA-ra kru-SAR la fron-TE-ra", notes:"visado = visa. frontera = border."},
+    {es:"¿Dónde puedo tomar un taxi seguro?",             en:"Where can I get a safe taxi?",                   phonetic:"DON-de PWE-do to-MAR un TAK-si se-GU-ro",         notes:"seguro = safe. Always worth asking."},
+  ],
+
+  "Heard in the Wild": [
+    {es:"¿De dónde es usted?",                           en:"Where are you from?",                            phonetic:"de DON-de es us-TED",                             notes:"usted = formal you. The most common question locals ask travellers."},
+    {es:"¿Es la primera vez que viene a…?",              en:"Is this your first time here?",                  phonetic:"es la pri-ME-ra bes ke BYE-ne a",                  notes:"viene = comes (usted). primera vez = first time."},
+    {es:"¿Qué le parece nuestro país?",                  en:"What do you think of our country?",              phonetic:"ke le pa-RE-se NWES-tro pa-IS",                   notes:"Answer: Me encanta / Es increíble / Estoy fascinado."},
+    {es:"Le traigo la cuenta en un momento.",            en:"I'll bring you the bill in a moment.",           phonetic:"le TRA-i-go la KWEN-ta en un mo-MEN-to",           notes:"le traigo = I'll bring you. Very common from waiters."},
+    {es:"No hay de ese — ¿le doy otro?",                 en:"We don't have that one — shall I give you another?", phonetic:"no ay de E-se le doy O-tro",                 notes:"No hay de ese = we don't have that one."},
+    {es:"¿Va a querer algo más?",                        en:"Will you want anything else?",                   phonetic:"ba a ke-RER AL-go mas",                           notes:"ir a + querer. Standard waiter/shopkeeper closing question."},
+    {es:"Con mucho gusto.",                              en:"With pleasure / you're welcome.",                 phonetic:"kon MU-cho GUS-to",                               notes:"Response to gracias. Warmer than 'de nada'. Very common in Colombia."},
+    {es:"Que le vaya bien.",                             en:"Take care / I hope things go well for you.",     phonetic:"ke le BA-ya byen",                               notes:"Warm farewell. vaya = subjunctive of ir. Common across LatAm."},
+    {es:"Permiso.",                                      en:"Excuse me (to get past).",                       phonetic:"per-MI-so",                                      notes:"Said when squeezing past someone. Not perdón (that's for apologies)."},
+    {es:"¿Necesita ayuda con algo?",                     en:"Do you need help with anything?",                phonetic:"ne-se-SI-ta a-YU-da kon AL-go",                  notes:"What locals say being helpful. ¿necesita? = formal you need?"},
+    {es:"¿Cómo le fue?",                                 en:"How did it go? / How was it?",                   phonetic:"KO-mo le fwe",                                   notes:"fue = went (preterite). Informal check-in from anyone you know."},
+    {es:"¿Me firma aquí, por favor?",                    en:"Could you sign here, please?",                   phonetic:"me FIR-ma a-KI por fa-BOR",                       notes:"What officials say. firma = signs. Reply: Claro, con mucho gusto."},
+  ],
 
 };;
 
@@ -4760,6 +4817,18 @@ document.addEventListener('click', () => {
 
 
 /* ══ PROGRESS ══ */
+function resetProgress() {
+  if (!confirm('Reset all progress? This cannot be undone.')) return;
+  progress = {};
+  settings = { totalSeen: 0, totalCorrect: 0, bestStreak: 0 };
+  localStorage.removeItem('sm_progress');
+  localStorage.removeItem('sm_settings');
+  localStorage.removeItem('sm_gameBests');
+  renderProgress();
+  buildCatPills();
+  loadDeck();
+}
+
 function renderProgress() {
   const allWords = Object.values(VOCAB).flat();
   const mastered = Object.values(progress).filter(p => (p.score||0) >= 4).length;

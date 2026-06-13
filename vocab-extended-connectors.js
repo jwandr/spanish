@@ -3,7 +3,7 @@
 
 const VOCAB_EXT_CONNECTORS = {
 
-"Prepositions & Their Uses": [
+"Grammar & Structure": [
 {es:"de",en:"of / from / about",type:"preposition",ex:"Soy de Australia. / Una taza de café. / Hablo de trabajo.",hint:"⭐ Most common word in Spanish. de = of, from, about, made of",level:"A1"},
 {es:"a",en:"to / at / (personal a)",type:"preposition",ex:"Voy a Lima. / A las tres. / Llamo a María.",hint:"⭐ a = to/at. Personal a: always before a person as object: veo a Juan",level:"A1"},
 {es:"en",en:"in / on / at",type:"preposition",ex:"Estoy en casa. / En la mesa. / En el aeropuerto.",hint:"⭐ en = in, on, at (location). en coche = by car",level:"A1"},
@@ -44,9 +44,6 @@ const VOCAB_EXT_CONNECTORS = {
 {es:"cerca de",en:"near / close to",type:"preposition",ex:"El hotel está cerca del centro.",hint:"cerca = near",level:"A1"},
 {es:"lejos de",en:"far from",type:"preposition",ex:"Vive lejos del trabajo.",hint:"lejos = far",level:"A1"},
 {es:"alrededor de",en:"around / approximately",type:"preposition",ex:"Alrededor del lago. / Alrededor de las tres.",hint:"redondo = round → alrededor = around",level:"A2"},
-],
-
-"Conjunctions & Connectors": [
 {es:"y",en:"and",type:"conjunction",ex:"Pan y agua. / Llegué y me senté.",hint:"⭐ y = and. Becomes 'e' before words starting with i/hi: tú e Isabel",level:"A1"},
 {es:"e",en:"and (before i/hi)",type:"conjunction",ex:"Padre e hijo. / Español e inglés.",hint:"y → e before i/hi sounds: padre e hijo (not 'y hijo')",level:"A1"},
 {es:"o",en:"or",type:"conjunction",ex:"¿Café o té? / Uno u otro.",hint:"⭐ o = or. Becomes 'u' before words starting with o/ho: uno u otro",level:"A1"},
@@ -85,9 +82,6 @@ const VOCAB_EXT_CONNECTORS = {
 {es:"no solo... sino también",en:"not only... but also",type:"conjunction",ex:"No solo habla español, sino también francés.",hint:"no solo X sino también Y — key structure for adding information",level:"B1"},
 {es:"o bien... o bien",en:"either... or (emphatic)",type:"conjunction",ex:"O bien vienes o bien te quedas.",hint:"o bien = either option stated clearly",level:"B1"},
 {es:"ni... ni",en:"neither... nor",type:"conjunction",ex:"No tengo ni hambre ni sed.",hint:"ni X ni Y = neither X nor Y",level:"A2"},
-],
-
-"Key Adverbs & Position Words": [
 {es:"también",en:"also / too / as well",type:"adverb",ex:"Yo también quiero. / También habla francés.",hint:"⭐ también = also/too (positive). Opposite: tampoco",level:"A1"},
 {es:"tampoco",en:"neither / not either",type:"adverb",ex:"Yo tampoco. / No me gusta, y tampoco a ella.",hint:"⭐ tampoco = neither/not either (negative). Opposite: también",level:"A2"},
 {es:"también vs tampoco",en:"also vs neither",type:"adverb",ex:"Yo también voy. / Yo tampoco voy.",hint:"también = me too (positive). tampoco = me neither (negative)",level:"A2"},
@@ -123,9 +117,6 @@ const VOCAB_EXT_CONNECTORS = {
 {es:"en algún lado",en:"somewhere",type:"adverb",ex:"Lo puse en algún lado.",hint:"algún = some, lado = side/place",level:"A2"},
 {es:"en ningún lado",en:"nowhere",type:"adverb",ex:"No lo encuentro en ningún lado.",hint:"ningún = no/none, lado = place",level:"A2"},
 {es:"en todas partes",en:"everywhere",type:"adverb",ex:"Hay turistas en todas partes.",hint:"partes = parts/places",level:"A2"},
-],
-
-"Key Determiners & Pronouns": [
 {es:"este / esta / esto",en:"this (near speaker)",type:"determiner",ex:"Este libro. / Esta casa. / ¿Qué es esto?",hint:"este = masc, esta = fem, esto = neuter (things). near speaker",level:"A1"},
 {es:"ese / esa / eso",en:"that (near listener)",type:"determiner",ex:"Ese hombre. / Esa idea. / ¿Qué es eso?",hint:"ese = masc, esa = fem, eso = neuter. near listener",level:"A1"},
 {es:"aquel / aquella / aquello",en:"that (over there / distant)",type:"determiner",ex:"Aquel edificio. / Aquella época. / Aquello fue difícil.",hint:"aquel = masc, aquella = fem, aquello = neuter. farther away",level:"A2"},
@@ -145,7 +136,8 @@ const VOCAB_EXT_CONNECTORS = {
 {es:"el que / la que",en:"the one who / the one that",type:"pronoun",ex:"El que llegue primero gana. / La que compré ayer.",hint:"el/la/los/las + que = the one(s) who/that",level:"B1"},
 {es:"tal / tales",en:"such / such a",type:"determiner",ex:"Tal cosa no existe. / En tal caso. / Tales condiciones.",hint:"tal = such. tal como = just as. en tal caso = in that case",level:"B1"},
 {es:"semejante",en:"such / similar / like that",type:"determiner",ex:"¡Semejante tontería! / Nunca vi cosa semejante.",hint:"similar → semejante. Often expresses surprise/indignation",level:"B1"},
-{es:"ambos / ambas",en:"both",type:"determiner",ex:"Ambos llegaron tarde. / Ambas opciones son válidas.",hint:"ambi- = both sides → ambos",level:"B1"},
-]
+{es:"ambos / ambas",en:"both",type:"determiner",ex:"Ambos llegaron tarde. / Ambas opciones son válidas.",hint:"ambi- = both sides → ambos",level:"B1"}
+],
 
 };
+

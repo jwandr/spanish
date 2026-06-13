@@ -3,7 +3,7 @@
 
 const VOCAB_EXT_VERBS = {
 
-"Essential Verbs": [
+"Core Verbs": [
 
 // ── THE 9 MISSING TOP-50 VERBS ────────────────────────────────────────────
 {es:"haber",en:"to have (auxiliary)",type:"verb",ex:"He comido, hemos llegado, había salido.",hint:"⚠ NOT tener — haber is ONLY for perfect tenses: he/has/ha/hemos/habéis/han + past participle",level:"A2"},

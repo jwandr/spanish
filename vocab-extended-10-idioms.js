@@ -4,7 +4,7 @@
 
 const VOCAB_EXT_10 = {
 
-"Idioms & Set Phrases": [
+"Idioms & Slang": [
 
 // ── BODY-BASED IDIOMS ──────────────────────────────────────────────────────
 {es:"no tener pelos en la lengua",en:"to speak one's mind / not mince words",type:"idiom",ex:"Mi abuela no tiene pelos en la lengua — dice lo que piensa.",hint:"literal: to have no hairs on the tongue",level:"B1"},
