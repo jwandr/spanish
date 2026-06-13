@@ -688,6 +688,7 @@
   <script src="vocab-extended-b1-gaps.js"></script>
   <script src="vocab-extended-verbs.js"></script>
   <script src="vocab-extended-connectors.js"></script>
+  <script src="vocab-extended-chunks.js"></script>
 </head>
 <body>
 
@@ -849,10 +850,15 @@
 <section class="section" id="tab-tenses">
   <div class="section-head" style="margin-bottom:0.5rem;">
     <div class="section-title">Tense trainer</div>
-    <div class="mode-toggle">
+    <div class="mode-toggle" style="flex-wrap:wrap;">
       <button class="mode-btn active" data-tensemode="learn">Learn</button>
       <button class="mode-btn" data-tensemode="practice">Conjugate</button>
+      <button class="mode-btn" data-tensemode="rapid">Rapid fire</button>
       <button class="mode-btn" data-tensemode="choose">Choose</button>
+      <button class="mode-btn" data-tensemode="serstar">Ser/Estar</button>
+      <button class="mode-btn" data-tensemode="story">Story</button>
+      <button class="mode-btn" data-tensemode="families">🧩 Families</button>
+      <button class="mode-btn" data-tensemode="yoform">Yo→Subj</button>
     </div>
   </div>
 
@@ -881,6 +887,7 @@
         <button class="mode-btn active" data-verbfilter="all"       onclick="setVerbFilter('all')">All verbs</button>
         <button class="mode-btn"        data-verbfilter="irregular" onclick="setVerbFilter('irregular')">Irregulars only</button>
         <button class="mode-btn"        data-verbfilter="regular"   onclick="setVerbFilter('regular')">Regulars only</button>
+        <button class="mode-btn"        data-verbfilter="top10"     onclick="setVerbFilter('top10')">⭐ Top 10</button>
       </div>
       <span id="practVerbCount" style="font-size:11px;color:var(--text-muted);"></span>
     </div>
@@ -923,6 +930,163 @@
     </div>
 
     <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:0.75rem;" id="chooseScore"></div>
+  </div>
+
+
+  <!-- ── RAPID FIRE mode ── -->
+  <div id="tenseRapid" style="display:none;">
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;">
+      One pronoun, one verb, one tense — type just that single form as fast as you can. Builds speed of recall, not just accuracy.
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;">
+      <div class="mode-toggle" id="rapidTenseFilter">
+        <button class="mode-btn active" data-rapidtense="all" onclick="setRapidTenseFilter('all')">All tenses</button>
+        <button class="mode-btn" data-rapidtense="present"    onclick="setRapidTenseFilter('present')">Present</button>
+        <button class="mode-btn" data-rapidtense="past"       onclick="setRapidTenseFilter('past')">Past</button>
+        <button class="mode-btn" data-rapidtense="other"      onclick="setRapidTenseFilter('other')">Other</button>
+      </div>
+    </div>
+    <div class="tense-verb-display" style="padding:1.25rem;">
+      <div id="rapidTenseName" style="font-size:11px;letter-spacing:1.2px;text-transform:uppercase;opacity:0.45;margin-bottom:6px;font-weight:600;"></div>
+      <div id="rapidPronoun"   style="font-size:18px;font-weight:700;opacity:0.7;margin-bottom:4px;"></div>
+      <div id="rapidVerb"      style="font-size:28px;font-weight:800;letter-spacing:-0.5px;"></div>
+      <div id="rapidMeaning"   style="font-size:13px;opacity:0.6;margin-top:4px;"></div>
+    </div>
+    <div class="rapid-input-wrap" style="margin-top:0.75rem;">
+      <input id="rapidConjInput" class="rapid-input" type="text"
+        placeholder="Type this form..." autocomplete="off" autocorrect="off"
+        autocapitalize="off" spellcheck="false">
+      <button class="submit-btn" onclick="checkRapidConj()">Go</button>
+    </div>
+    <div class="feedback-msg" id="rapidConjFeedback"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:0.75rem;flex-wrap:wrap;">
+      <button class="nav-btn" onclick="nextRapidConj()">Skip</button>
+      <button class="nav-btn" onclick="revealRapidConj()">Reveal</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:0.5rem;" id="rapidConjScore"></div>
+  </div>
+
+  <!-- ── SER / ESTAR mode ── -->
+  <div id="tenseSerEstar" style="display:none;">
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;">
+      The most common error English speakers make. <strong>Ser</strong> = permanent identity. <strong>Estar</strong> = temporary state, location, emotion. Each scenario has a reason.
+    </div>
+    <div id="serEstarCard" class="card" style="padding:1.5rem;margin-bottom:0.75rem;min-height:100px;">
+      <div id="serEstarContext"  style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;"></div>
+      <div id="serEstarSentence" style="font-size:21px;font-weight:700;line-height:1.4;margin-bottom:6px;"></div>
+      <div id="serEstarEnglish"  style="font-size:13px;color:var(--text-muted);"></div>
+    </div>
+    <div id="serEstarOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0.75rem;"></div>
+    <div class="feedback-msg" id="serEstarFeedback"></div>
+    <div id="serEstarExplanation" style="display:none;background:var(--amber-light);border-left:4px solid var(--amber);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:0.75rem 1rem;font-size:13px;color:var(--amber-dark);margin-top:0.5rem;line-height:1.6;"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:1rem;">
+      <button class="nav-btn" id="serEstarNextBtn" onclick="nextSerEstar()" style="display:none;">Next</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:0.75rem;" id="serEstarScore"></div>
+  </div>
+
+  <!-- ── STORY mode ── -->
+  <div id="tenseStory" style="display:none;">
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;">
+      Fill in the blanks in a connected story. Tenses must work together in context.
+    </div>
+    <div id="storyCard" class="card" style="padding:1.5rem;margin-bottom:0.75rem;">
+      <div id="storyTitle"   style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:0.75rem;"></div>
+      <div id="storyText"    style="font-size:16px;line-height:1.9;"></div>
+      <div id="storyEnglish" style="font-size:13px;color:var(--text-muted);margin-top:0.75rem;font-style:italic;border-top:1px solid var(--border);padding-top:0.5rem;"></div>
+    </div>
+    <div id="storyBlanks"   style="display:flex;flex-direction:column;gap:8px;margin-bottom:0.75rem;"></div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+      <button class="submit-btn" onclick="checkStory()">Check</button>
+      <button class="nav-btn"    onclick="revealStory()">Reveal all</button>
+      <button class="nav-btn"    onclick="nextStory()">Next story</button>
+    </div>
+    <div class="feedback-msg" id="storyFeedback" style="margin-top:0.75rem;"></div>
+    <div id="storyExplanations" style="display:none;margin-top:0.75rem;"></div>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:0.5rem;" id="storyScore"></div>
+  </div>
+
+  <!-- ── VERB FAMILIES mode ── -->
+  <div id="tenseFamilies" style="display:none;">
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;">
+      Irregulars aren't random — they come in families. Learn one pattern and you unlock multiple verbs at once.
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0.75rem;" id="familyPills"></div>
+    <div class="card" style="padding:1.25rem;margin-bottom:0.75rem;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:8px;" id="familyPatternLabel"></div>
+      <div style="font-size:14px;color:var(--header);line-height:1.7;margin-bottom:0.75rem;" id="familyPatternDesc"></div>
+      <div id="familyVerbGrid" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;" id="familyTip"></div>
+    <div class="section-head" style="margin-bottom:0.5rem;">
+      <div style="font-size:13px;font-weight:700;">Drill this family</div>
+    </div>
+    <div class="tense-verb-display" style="padding:1rem;">
+      <div id="familyDrillTense"   style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;opacity:0.5;margin-bottom:4px;font-weight:600;"></div>
+      <div id="familyDrillPronoun" style="font-size:16px;font-weight:700;opacity:0.7;margin-bottom:2px;"></div>
+      <div id="familyDrillVerb"    style="font-size:26px;font-weight:800;letter-spacing:-0.5px;"></div>
+      <div id="familyDrillHint"    style="font-size:11px;opacity:0.6;margin-top:4px;font-style:italic;"></div>
+    </div>
+    <div class="rapid-input-wrap" style="margin-top:0.6rem;">
+      <input id="familyDrillInput" class="rapid-input" type="text"
+        placeholder="Type this form..." autocomplete="off" autocorrect="off"
+        autocapitalize="off" spellcheck="false">
+      <button class="submit-btn" onclick="checkFamilyDrill()">Go</button>
+    </div>
+    <div class="feedback-msg" id="familyDrillFeedback"></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:0.75rem;flex-wrap:wrap;">
+      <button class="nav-btn" onclick="nextFamilyDrill()">Skip</button>
+      <button class="nav-btn" onclick="revealFamilyDrill()">Reveal</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:0.5rem;" id="familyDrillScore"></div>
+  </div>
+
+  <!-- ── YO FORM → SUBJUNCTIVE mode ── -->
+  <div id="tenseYoForm" style="display:none;">
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;">
+      <strong>The yo-form trick:</strong> drop the <em>-o</em> from the present yo form and add subjunctive endings. hag<strong>o</strong> → hag → <strong>haga, hagas, haga, hagamos, hagan</strong>. This works for almost all irregular verbs.
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;">
+      <div class="mode-toggle" id="yoFormStepToggle">
+        <button class="mode-btn active" data-yostep="yo"    onclick="setYoStep('yo')">Step 1: Yo form</button>
+        <button class="mode-btn"        data-yostep="subj"  onclick="setYoStep('subj')">Step 2: Subjunctive</button>
+        <button class="mode-btn"        data-yostep="both"  onclick="setYoStep('both')">Both together</button>
+      </div>
+    </div>
+    <div class="tense-verb-display" style="padding:1.25rem;">
+      <div id="yoFormTenseLabel" style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;opacity:0.45;margin-bottom:6px;font-weight:600;"></div>
+      <div id="yoFormVerb"       style="font-size:28px;font-weight:800;letter-spacing:-0.5px;"></div>
+      <div id="yoFormMeaning"    style="font-size:13px;opacity:0.6;margin-top:4px;"></div>
+      <div id="yoFormBridge"     style="font-size:12px;color:#A5B4FC;margin-top:6px;font-style:italic;"></div>
+    </div>
+
+    <!-- Step 1: just type yo form -->
+    <div id="yoStep1Panel">
+      <div style="font-size:12px;color:var(--text-muted);margin:0.5rem 0 0.25rem;font-weight:600;">What is the <em>yo</em> form in the present?</div>
+      <div class="rapid-input-wrap">
+        <input id="yoFormInput" class="rapid-input" type="text"
+          placeholder="yo ..." autocomplete="off" autocorrect="off"
+          autocapitalize="off" spellcheck="false">
+        <button class="submit-btn" onclick="checkYoForm()">Go</button>
+      </div>
+      <div class="feedback-msg" id="yoFormFeedback"></div>
+    </div>
+
+    <!-- Step 2: type all 5 subjunctive forms -->
+    <div id="yoStep2Panel" style="display:none;">
+      <div style="font-size:12px;color:var(--text-muted);margin:0.5rem 0 0.25rem;font-weight:600;">Now build the <em>present subjunctive</em> for all pronouns:</div>
+      <div id="yoSubjGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:0.75rem;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <button class="submit-btn" onclick="checkYoSubj()">Check</button>
+        <button class="nav-btn"    onclick="revealYoSubj()">Reveal</button>
+      </div>
+      <div class="feedback-msg" id="yoSubjFeedback"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:0.75rem;flex-wrap:wrap;">
+      <button class="nav-btn" onclick="nextYoVerb()">Next verb</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:0.5rem;" id="yoFormScore"></div>
   </div>
 
 </section>
@@ -1418,7 +1582,8 @@ function mergeVocab() {
    typeof VOCAB_EXT_02!=='undefined'?VOCAB_EXT_02:null,
    typeof VOCAB_EXT_B1!=='undefined'?VOCAB_EXT_B1:null,
    typeof VOCAB_EXT_VERBS!=='undefined'?VOCAB_EXT_VERBS:null,
-   typeof VOCAB_EXT_CONNECTORS!=='undefined'?VOCAB_EXT_CONNECTORS:null].forEach(ext => {
+   typeof VOCAB_EXT_CONNECTORS!=='undefined'?VOCAB_EXT_CONNECTORS:null,
+   typeof VOCAB_EXT_CHUNKS!=='undefined'?VOCAB_EXT_CHUNKS:null].forEach(ext => {
     if (!ext) return;
     Object.entries(ext).forEach(([cat, words]) => {
       if (VOCAB[cat]) {
@@ -2836,12 +3001,15 @@ function setVerbFilter(filter) {
   loadPractVerb();
 }
 
+const TOP_10_IRREG = ['ser','estar','ir','tener','hacer','poder','querer','venir','decir','saber'];
+
 function resetVerbPool() {
-  const t = TENSES[currentTense];
+  const t   = TENSES[currentTense];
   const all = t.verbs || [];
-  let pool = all;
+  let pool  = all;
   if (verbFilter === 'irregular') pool = all.filter(v => v.irregular);
   if (verbFilter === 'regular')   pool = all.filter(v => v.regular && !v.irregular);
+  if (verbFilter === 'top10')     pool = all.filter(v => TOP_10_IRREG.some(k => v.inf && v.inf.startsWith(k)));
   if (!pool.length) pool = all; // fallback
   conjShuffledFiltered = shuffle([...pool]);
   practVerbIndex = 0;
@@ -3025,19 +3193,1084 @@ function updateChooseScore() {
 }
 
 // ── Mode switching ────────────────────────────────────────────────────────────
-document.querySelectorAll('[data-tensemode]').forEach(b => {
-  b.addEventListener('click', () => {
-    tenseMode = b.dataset.tensemode;
-    document.querySelectorAll('[data-tensemode]').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    document.getElementById('tensePills').style.display   = tenseMode !== 'choose' ? 'flex' : 'none';
-    document.getElementById('tenseLearned').style.display  = tenseMode === 'learn'    ? 'block' : 'none';
-    document.getElementById('tensePractice').style.display = tenseMode === 'practice' ? 'block' : 'none';
-    document.getElementById('tenseChoose').style.display   = tenseMode === 'choose'   ? 'block' : 'none';
-    if (tenseMode === 'practice') { resetVerbPool(); loadPractVerb(); }
-    if (tenseMode === 'choose')   { initChooseMode(); }
+function setTenseMode(mode) {
+  tenseMode = mode;
+  document.querySelectorAll('[data-tensemode]').forEach(x => x.classList.remove('active'));
+  const activeBtn = document.querySelector('[data-tensemode="' + mode + '"]');
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const showPills = ['learn','practice','rapid'].includes(tenseMode);
+  const panels = {
+    tensePills:    showPills,
+    tenseLearned:  mode === 'learn',
+    tensePractice: mode === 'practice',
+    tenseChoose:   mode === 'choose',
+    tenseRapid:    mode === 'rapid',
+    tenseSerEstar: mode === 'serstar',
+    tenseStory:    mode === 'story',
+    tenseFamilies: mode === 'families',
+    tenseYoForm:   mode === 'yoform',
+  };
+  Object.entries(panels).forEach(([id, show]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? (id === 'tensePills' ? 'flex' : 'block') : 'none';
   });
+
+  if (mode === 'practice') { resetVerbPool(); loadPractVerb(); }
+  if (mode === 'choose')   { initChooseMode(); }
+  if (mode === 'rapid')    { buildRapidConjPool(); loadRapidConjQ(); }
+  if (mode === 'serstar')  { initSerEstar(); }
+  if (mode === 'story')    { initStory(); }
+  if (mode === 'families') { initFamilies(); }
+  if (mode === 'yoform')   { initYoForm(); }
+}
+
+document.querySelectorAll('[data-tensemode]').forEach(b => {
+  b.addEventListener('click', () => setTenseMode(b.dataset.tensemode));
 });
+
+
+// ════════════════════════════════════════════════════════════════════
+// TENSE TRAINER — NEW MODES
+// ════════════════════════════════════════════════════════════════════
+
+// ── TOP 10 IRREGULAR VERBS ─────────────────────────────────────────
+// TOP_10_IRREG defined in tense state section
+
+function resetVerbPool() {
+  const t   = TENSES[currentTense];
+  const all = t.verbs || [];
+  let pool  = all;
+  if (verbFilter === 'irregular') pool = all.filter(v => v.irregular);
+  if (verbFilter === 'regular')   pool = all.filter(v => v.regular && !v.irregular);
+  if (verbFilter === 'top10')     pool = all.filter(v => TOP_10_IRREG.some(k => v.inf.startsWith(k)));
+  if (!pool.length) pool = all;
+  conjShuffledFiltered = shuffle([...pool]);
+  practVerbIndex = 0;
+  const el = document.getElementById('practVerbCount');
+  if (el) el.textContent = `${pool.length} verb${pool.length!==1?'s':''}`;
+}
+
+// ── RAPID FIRE CONJUGATION ─────────────────────────────────────────
+let rapidConjPool    = [];
+let rapidConjIndex   = 0;
+let rapidConjCorrect = 0;
+let rapidConjTotal   = 0;
+let rapidConjFilter  = 'all'; // 'all' | 'present' | 'past' | 'other'
+let rapidConjCurrent = null;  // {tenseName, pronoun, verb, correct}
+
+const RAPID_PAST_TENSES  = ['Preterite (completed past)', 'Imperfect (past habit/state)', 'Present Perfect'];
+const RAPID_PRES_TENSES  = ['Present'];
+const RAPID_OTHER_TENSES = ['Future', 'Conditional', 'Present Subjunctive', 'Progressive (estar + gerund)', 'Key Structures'];
+
+function setRapidTenseFilter(filter) {
+  rapidConjFilter = filter;
+  document.querySelectorAll('[data-rapidtense]').forEach(b => {
+    b.classList.toggle('active', b.dataset.rapidtense === filter);
+  });
+  buildRapidConjPool();
+  loadRapidConjQ();
+}
+
+function buildRapidConjPool() {
+  rapidConjPool = [];
+  const pronounKeys = ['yo','tú','él','nosotros','ustedes'];
+  const pronounLabel = {'yo':'yo','tú':'tú','él':'él / ella','nosotros':'nosotros','ustedes':'ustedes'};
+
+  Object.entries(TENSES).forEach(([tenseName, tenseData]) => {
+    // Filter by tense group
+    if (rapidConjFilter === 'present' && !RAPID_PRES_TENSES.includes(tenseName)) return;
+    if (rapidConjFilter === 'past'    && !RAPID_PAST_TENSES.includes(tenseName))  return;
+    if (rapidConjFilter === 'other'   && !RAPID_OTHER_TENSES.includes(tenseName)) return;
+    // Skip scenario/structure tenses that don't have single-form answers
+    if (tenseName === 'Preterite vs Imperfect' || tenseName === 'Key Structures') return;
+
+    tenseData.verbs.forEach(verb => {
+      pronounKeys.forEach(pr => {
+        const form = verb.conj[pr];
+        if (!form || form === '—') return;
+        rapidConjPool.push({
+          tenseName,
+          pronoun: pronounLabel[pr],
+          pronounKey: pr,
+          inf: verb.inf,
+          en: verb.en,
+          correct: form,
+          irregular: !!verb.irregular,
+          note: verb.note || '',
+        });
+      });
+    });
+  });
+
+  rapidConjPool = shuffle(rapidConjPool);
+  rapidConjIndex = 0;
+}
+
+function loadRapidConjQ() {
+  if (!rapidConjPool.length) buildRapidConjPool();
+  if (rapidConjIndex >= rapidConjPool.length) {
+    rapidConjPool = shuffle([...rapidConjPool]);
+    rapidConjIndex = 0;
+  }
+  rapidConjCurrent = rapidConjPool[rapidConjIndex++];
+  const q = rapidConjCurrent;
+
+  document.getElementById('rapidTenseName').textContent = q.tenseName;
+  document.getElementById('rapidPronoun').textContent   = q.pronoun;
+  document.getElementById('rapidVerb').textContent      = q.inf;
+  document.getElementById('rapidMeaning').textContent   = q.en;
+
+  const input = document.getElementById('rapidConjInput');
+  input.value = '';
+  input.className = 'rapid-input';
+  document.getElementById('rapidConjFeedback').textContent = '';
+  document.getElementById('rapidConjFeedback').className   = 'feedback-msg';
+  input.focus();
+  updateRapidConjScore();
+}
+
+function checkRapidConj() {
+  const q   = rapidConjCurrent;
+  const val = document.getElementById('rapidConjInput').value.trim();
+  if (!val) return;
+
+  const ok = similar(val, q.correct) || val.toLowerCase() === q.correct.toLowerCase();
+  rapidConjTotal++;
+
+  const fb    = document.getElementById('rapidConjFeedback');
+  const input = document.getElementById('rapidConjInput');
+  input.className = 'rapid-input ' + (ok ? 'correct' : 'wrong');
+
+  if (ok) {
+    rapidConjCorrect++;
+    fb.textContent = '✓ ' + q.correct;
+    fb.className   = 'feedback-msg correct';
+    bumpStreak();
+    setTimeout(loadRapidConjQ, 600);
+  } else {
+    fb.innerHTML = `✗ &nbsp;<strong>${q.correct}</strong>${q.note ? ' — ' + q.note : ''}`;
+    fb.className = 'feedback-msg wrong';
+  }
+  updateRapidConjScore();
+}
+
+function revealRapidConj() {
+  const q = rapidConjCurrent;
+  document.getElementById('rapidConjInput').value = q.correct;
+  document.getElementById('rapidConjInput').className = 'rapid-input revealed';
+  const fb = document.getElementById('rapidConjFeedback');
+  fb.innerHTML = `${q.correct}${q.note ? ' — <em>' + q.note + '</em>' : ''}`;
+  fb.className = 'feedback-msg';
+}
+
+function nextRapidConj() {
+  rapidConjTotal++;
+  updateRapidConjScore();
+  loadRapidConjQ();
+}
+
+function updateRapidConjScore() {
+  const el = document.getElementById('rapidConjScore');
+  if (!el) return;
+  const pct = rapidConjTotal > 0 ? Math.round(rapidConjCorrect / rapidConjTotal * 100) : 0;
+  el.textContent = rapidConjTotal > 0
+    ? `✓ ${rapidConjCorrect} / ${rapidConjTotal} (${pct}%)`
+    : 'Type the conjugated form and press Enter';
+}
+
+document.getElementById('rapidConjInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkRapidConj();
+});
+
+// ── SER / ESTAR DRILL ──────────────────────────────────────────────
+let serEstarIndex    = 0;
+let serEstarCorrect  = 0;
+let serEstarTotal    = 0;
+let serEstarAnswered = false;
+let serEstarShuffled = [];
+
+const SER_ESTAR_QUESTIONS = [
+  // SER — identity, origin, profession, characteristics, material, ownership, time/date, passive
+  {sentence:"___ médico.", en:"He is a doctor.", options:["Es","Está"], correct:0, rule:"SER",
+   explanation:"Profession → SER. Ser médico = to be a doctor by profession. Esta profesión es parte de su identidad."},
+  {sentence:"___ de Australia.", en:"She is from Australia.", options:["Es","Está"], correct:0, rule:"SER",
+   explanation:"Origin → SER. Ser de + place = to be from. Always ser for origin."},
+  {sentence:"La mesa ___ de madera.", en:"The table is made of wood.", options:["es","está"], correct:0, rule:"SER",
+   explanation:"Material/composition → SER. What something is made of is a permanent characteristic."},
+  {sentence:"La reunión ___ a las tres.", en:"The meeting is at three.", options:["es","está"], correct:0, rule:"SER",
+   explanation:"Time/events → SER. Events taking place use ser: la fiesta es aquí, el concierto es a las ocho."},
+  {sentence:"___ muy inteligente.", en:"She is very intelligent.", options:["Es","Está"], correct:0, rule:"SER",
+   explanation:"Personality/inherent trait → SER. Intelligence is seen as a permanent characteristic."},
+  {sentence:"El libro ___ de María.", en:"The book is Maria's.", options:["es","está"], correct:0, rule:"SER",
+   explanation:"Ownership/possession → SER. ¿De quién es? — Es de María."},
+  {sentence:"Hoy ___ lunes.", en:"Today is Monday.", options:["es","está"], correct:0, rule:"SER",
+   explanation:"Days, dates, time → SER. Es lunes, es el 3 de mayo, son las dos."},
+  {sentence:"La puerta ___ abierta por el guardia.", en:"The door is opened by the guard.", options:["es","está"], correct:0, rule:"SER",
+   explanation:"Passive voice (action by agent) → SER. Es + past participle + por = passive construction."},
+  {sentence:"___ alto y delgado.", en:"He is tall and slim.", options:["Es","Está"], correct:0, rule:"SER",
+   explanation:"Physical characteristics viewed as permanent → SER. Height and build don't usually change."},
+  {sentence:"La boda ___ en la playa.", en:"The wedding is on the beach.", options:["es","está"], correct:0, rule:"SER",
+   explanation:"Events → SER. Where an event takes place uses ser, NOT estar. Common mistake!"},
+
+  // ESTAR — location, temporary state, emotion, result of action, progressive
+  {sentence:"___ muy cansado.", en:"He is very tired.", options:["Es","Está"], correct:1, rule:"ESTAR",
+   explanation:"Temporary physical state → ESTAR. Tiredness is temporary — it will change. Compare: es fuerte (permanent strength) vs está débil (temporarily weak)."},
+  {sentence:"¿Dónde ___ el banco?", en:"Where is the bank?", options:["es","está"], correct:1, rule:"ESTAR",
+   explanation:"Location of things/people → ESTAR. El banco está en la calle mayor. Exception: events (ser)."},
+  {sentence:"La sopa ___ muy caliente.", en:"The soup is very hot.", options:["es","está"], correct:1, rule:"ESTAR",
+   explanation:"Temporary state/condition → ESTAR. The soup's temperature is temporary — it will cool down."},
+  {sentence:"___ enferma.", en:"She is sick.", options:["Es","Está"], correct:1, rule:"ESTAR",
+   explanation:"Temporary physical condition → ESTAR. Illness is temporary (usually!). Estar enfermo = to be sick right now."},
+  {sentence:"___ nerviosa antes del examen.", en:"She is nervous before the exam.", options:["Es","Está"], correct:1, rule:"ESTAR",
+   explanation:"Emotional state → ESTAR. Emotions are temporary states: está feliz, está triste, está enojado."},
+  {sentence:"La ventana ___ rota.", en:"The window is broken.", options:["es","está"], correct:1, rule:"ESTAR",
+   explanation:"Result of an action/change → ESTAR. Estar + past participle = resulting condition. The window got broken; está rota describes the result."},
+  {sentence:"El café ___ listo.", en:"The coffee is ready.", options:["es","está"], correct:1, rule:"ESTAR",
+   explanation:"Result/readiness → ESTAR. Listo with estar = ready. Listo with ser = clever/smart! Classic contrast."},
+  {sentence:"___ trabajando ahora mismo.", en:"She is working right now.", options:["Es","Está"], correct:1, rule:"ESTAR",
+   explanation:"Progressive action → ESTAR. Estar + gerund = currently doing. Está trabajando = she is working (right now)."},
+  {sentence:"Madrid ___ en el centro de España.", en:"Madrid is in the centre of Spain.", options:["es","está"], correct:1, rule:"ESTAR",
+   explanation:"Physical location → ESTAR. Even for cities and permanent locations, estar is used for where things are."},
+  {sentence:"La puerta ___ abierta.", en:"The door is open.", options:["es","está"], correct:1, rule:"ESTAR",
+   explanation:"Resulting state → ESTAR. Estar + past participle = condition/result. La puerta está abierta = it's currently in the open state (someone opened it)."},
+
+  // TRICKY CONTRASTS — same word, different meaning
+  {sentence:"Juan ___ aburrido en clase.", en:"Juan is bored in class.", options:["es","está"], correct:1, rule:"ESTAR (contrast)",
+   explanation:"ESTAR + aburrido = bored (temporary feeling). SER + aburrido = boring (permanent trait). 'Juan es aburrido' = Juan is a boring person. 'Juan está aburrido' = Juan is bored right now."},
+  {sentence:"Ese libro ___ muy aburrido.", en:"That book is very boring.", options:["es","está"], correct:0, rule:"SER (contrast)",
+   explanation:"SER + aburrido = boring (inherent characteristic of the book). Compare: Juan está aburrido (he's bored right now) vs ese libro es aburrido (it's a boring book by nature)."},
+  {sentence:"María ___ muy lista.", en:"María is very clever.",  options:["es","está"], correct:0, rule:"SER (contrast)",
+   explanation:"SER + listo = clever/smart (personality). ESTAR + listo = ready. '¿Estás listo?' = Are you ready? 'Eres muy lista' = You're very smart."},
+  {sentence:"La comida ___ lista.", en:"The food is ready.", options:["es","está"], correct:1, rule:"ESTAR (contrast)",
+   explanation:"ESTAR + listo = ready (result of preparation). La comida está lista = the food is ready to eat."},
+  {sentence:"___ seguro de la respuesta.", en:"He is sure of the answer.", options:["Es","Está"], correct:1, rule:"ESTAR (contrast)",
+   explanation:"ESTAR + seguro = to feel certain/sure (mental state). SER + seguro = to be a safe/secure person/place. '¿Estás seguro?' = Are you sure?"},
+  {sentence:"Este barrio ___ muy seguro.", en:"This neighbourhood is very safe.", options:["es","está"], correct:0, rule:"SER (contrast)",
+   explanation:"SER + seguro = safe/secure (characteristic). Compare: estoy seguro (I'm certain) vs este barrio es seguro (it's a safe neighbourhood)."},
+  {sentence:"Mi abuela ___ muy viva.", en:"My grandmother is very sharp/lively.", options:["es","está"], correct:0, rule:"SER (contrast)",
+   explanation:"SER + vivo = lively, sharp, quick-witted (personality trait). ESTAR + vivo = to be alive. '¿Está vivo?' = Is he alive?"},
+  {sentence:"El paciente todavía ___ vivo.", en:"The patient is still alive.", options:["es","está"], correct:1, rule:"ESTAR (contrast)",
+   explanation:"ESTAR + vivo = to be alive (current state). SER + vivo = to be lively/sharp. Being alive is a state you are in — it can change."},
+  {sentence:"Esta fruta ___ muy mala.", en:"This fruit is very bad (spoiled).", options:["es","está"], correct:1, rule:"ESTAR (contrast)",
+   explanation:"ESTAR + malo = spoiled, unwell, tasting bad (temporary condition). SER + malo = to be a bad person or bad quality by nature."},
+  {sentence:"___ un hombre muy malo.", en:"He is a very bad/evil man.", options:["Es","Está"], correct:0, rule:"SER (contrast)",
+   explanation:"SER + malo = wicked, bad by nature (character trait). ESTAR + malo = to be sick or spoiled. 'El villano es muy malo' = The villain is evil."},
+];
+
+function initSerEstar() {
+  serEstarShuffled = shuffle([...SER_ESTAR_QUESTIONS]);
+  serEstarIndex    = 0;
+  serEstarCorrect  = 0;
+  serEstarTotal    = 0;
+  serEstarAnswered = false;
+  loadSerEstar();
+}
+
+function loadSerEstar() {
+  if (serEstarIndex >= serEstarShuffled.length) {
+    serEstarShuffled = shuffle([...SER_ESTAR_QUESTIONS]);
+    serEstarIndex    = 0;
+  }
+
+  const q = serEstarShuffled[serEstarIndex];
+  serEstarAnswered = false;
+
+  // Rule badge colour
+  const isEstar = q.rule.startsWith('ESTAR');
+  const ruleBg  = isEstar ? 'var(--teal-light)' : 'var(--primary-light)';
+  const ruleCol = isEstar ? 'var(--teal-dark)'  : 'var(--primary-dark)';
+
+  document.getElementById('serEstarContext').innerHTML =
+    `<span style="background:${ruleBg};color:${ruleCol};padding:2px 8px;border-radius:99px;font-weight:700;">${q.rule}</span>`;
+  document.getElementById('serEstarSentence').textContent = q.sentence;
+  document.getElementById('serEstarEnglish').textContent  = q.en;
+  document.getElementById('serEstarFeedback').textContent  = '';
+  document.getElementById('serEstarFeedback').className    = 'feedback-msg';
+  document.getElementById('serEstarExplanation').style.display = 'none';
+  document.getElementById('serEstarNextBtn').style.display     = 'none';
+
+  const opts = document.getElementById('serEstarOptions');
+  opts.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className   = 'nav-btn';
+    btn.style.cssText = 'width:100%;padding:14px;font-size:18px;font-weight:800;letter-spacing:0.5px;';
+    btn.textContent = opt;
+    btn.onclick     = () => answerSerEstar(i, q);
+    opts.appendChild(btn);
+  });
+  updateSerEstarScore();
+}
+
+function answerSerEstar(chosen, q) {
+  if (serEstarAnswered) return;
+  serEstarAnswered = true;
+  serEstarTotal++;
+
+  const correct = chosen === q.correct;
+  if (correct) { serEstarCorrect++; bumpStreak(); } else { resetStreakUI(); }
+
+  document.querySelectorAll('#serEstarOptions button').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) {
+      btn.style.background = 'var(--teal-light)'; btn.style.color = 'var(--teal-dark)';
+      btn.style.borderColor = 'var(--teal)';
+    } else if (i === chosen && !correct) {
+      btn.style.background = 'var(--error-bg)'; btn.style.color = 'var(--error)';
+      btn.style.borderColor = 'var(--error)';
+    }
+  });
+
+  const fb = document.getElementById('serEstarFeedback');
+  fb.textContent = correct ? '✓ Correct!' : `✗ It's ${q.options[q.correct]}`;
+  fb.className   = correct ? 'feedback-msg correct' : 'feedback-msg wrong';
+
+  document.getElementById('serEstarExplanation').textContent  = q.explanation;
+  document.getElementById('serEstarExplanation').style.display = 'block';
+  document.getElementById('serEstarNextBtn').style.display     = 'inline-block';
+  updateSerEstarScore();
+}
+
+function nextSerEstar() {
+  serEstarIndex++;
+  loadSerEstar();
+}
+
+function updateSerEstarScore() {
+  const el  = document.getElementById('serEstarScore');
+  if (!el) return;
+  const pct = serEstarTotal > 0 ? Math.round(serEstarCorrect / serEstarTotal * 100) : 0;
+  el.textContent = serEstarTotal > 0
+    ? `✓ ${serEstarCorrect} / ${serEstarTotal} (${pct}%) — ${SER_ESTAR_QUESTIONS.length} scenarios total`
+    : `${SER_ESTAR_QUESTIONS.length} scenarios · ser vs estar contrasts included`;
+}
+
+// ── STORY GAP-FILL ─────────────────────────────────────────────────
+let storyIndex   = 0;
+let storyCorrect = 0;
+let storyTotal   = 0;
+let storyShuffled = [];
+
+const STORIES = [
+  {
+    title:"Un día en el mercado",
+    text:"Ayer, cuando [1] (llegar/yo/pret) al mercado, [2] (haber/impf) mucha gente. [3] (Ser/impf) las diez de la mañana y el sol ya [4] (brillar/impf) con fuerza. De repente, [5] (ver/yo/pret) a mi vecina que [6] (comprar/impf) frutas.",
+    english:"Yesterday, when I arrived at the market, there were many people. It was ten in the morning and the sun was already shining strongly. Suddenly, I saw my neighbour who was buying fruit.",
+    blanks:[
+      {label:"1. llegar (yo)",     correct:"llegué",   hint:"Preterite — specific completed arrival"},
+      {label:"2. haber",           correct:"había",    hint:"Imperfect — background state (there were)"},
+      {label:"3. Ser",             correct:"Eran",     hint:"Imperfect — telling the time in the past"},
+      {label:"4. brillar",         correct:"brillaba", hint:"Imperfect — ongoing background condition"},
+      {label:"5. ver (yo)",        correct:"vi",       hint:"Preterite — sudden completed event (de repente)"},
+      {label:"6. comprar (ella)",  correct:"compraba", hint:"Imperfect — action in progress when I saw her"},
+    ]
+  },
+  {
+    title:"El viaje a Lima",
+    text:"Cuando [1] (tener/yo/impf) veinte años, [2] (decidir/yo/pret) viajar a Lima. [3] (Ser/impf) la primera vez que [4] (salir/yo/pret) de mi país. El avión [5] (despegar/pret) a las seis y durante el vuelo [6] (leer/yo/impf) una guía de viaje. Al llegar, [7] (estar/impf) muy emocionado.",
+    english:"When I was twenty, I decided to travel to Lima. It was the first time I had left my country. The plane took off at six and during the flight I was reading a travel guide. On arriving, I was very excited.",
+    blanks:[
+      {label:"1. tener (yo)",      correct:"tenía",     hint:"Imperfect — age/ongoing state in the past"},
+      {label:"2. decidir (yo)",    correct:"decidí",    hint:"Preterite — specific decision made"},
+      {label:"3. Ser",             correct:"Era",       hint:"Imperfect — background description"},
+      {label:"4. salir (yo)",      correct:"salí",      hint:"Preterite — first time event (completed)"},
+      {label:"5. despegar",        correct:"despegó",   hint:"Preterite — specific scheduled event"},
+      {label:"6. leer (yo)",       correct:"leía",      hint:"Imperfect — ongoing action during the flight"},
+      {label:"7. estar (yo)",      correct:"estaba",    hint:"Imperfect — emotional state at that moment"},
+    ]
+  },
+  {
+    title:"La tormenta",
+    text:"[1] (Ser/impf) una tarde tranquila cuando de repente [2] (empezar/pret) a llover. El cielo [3] (estar/impf) gris y el viento [4] (soplar/impf) fuerte. Los niños que [5] (jugar/impf) en el parque [6] (correr/pret) a refugiarse. En diez minutos, las calles [7] (llenarse/pret) de agua.",
+    english:"It was a quiet afternoon when it suddenly started to rain. The sky was grey and the wind was blowing hard. The children who were playing in the park ran to take shelter. In ten minutes, the streets filled with water.",
+    blanks:[
+      {label:"1. Ser",               correct:"Era",      hint:"Imperfect — scene-setting"},
+      {label:"2. empezar",           correct:"empezó",   hint:"Preterite — sudden event (de repente)"},
+      {label:"3. estar",             correct:"estaba",   hint:"Imperfect — ongoing background state"},
+      {label:"4. soplar",            correct:"soplaba",  hint:"Imperfect — continuous background action"},
+      {label:"5. jugar (ellos)",     correct:"jugaban",  hint:"Imperfect — what they were doing when the event happened"},
+      {label:"6. correr (ellos)",    correct:"corrieron",hint:"Preterite — completed response to the rain"},
+      {label:"7. llenarse (calles)", correct:"se llenaron",hint:"Preterite — completed change of state"},
+    ]
+  },
+  {
+    title:"Una llamada inesperada",
+    text:"[1] (Estar/yo/impf) durmiendo cuando [2] (sonar/pret) el teléfono. [3] (Ser/impf) las tres de la madrugada. [4] (Contestar/yo/pret) y [5] (reconocer/yo/pret) la voz de mi amigo. Me [6] (decir/él/pret) que [7] (necesitar/impf) ayuda urgente.",
+    english:"I was sleeping when the phone rang. It was three in the morning. I answered and recognised my friend's voice. He told me that he needed urgent help.",
+    blanks:[
+      {label:"1. Estar (yo)",       correct:"Estaba",   hint:"Imperfect — ongoing action (sleeping) interrupted"},
+      {label:"2. sonar",            correct:"sonó",     hint:"Preterite — interrupting event"},
+      {label:"3. Ser",              correct:"Eran",     hint:"Imperfect — telling the time in past"},
+      {label:"4. Contestar (yo)",   correct:"Contesté", hint:"Preterite — completed action"},
+      {label:"5. reconocer (yo)",   correct:"reconocí", hint:"Preterite — moment of recognition"},
+      {label:"6. decir (él)",       correct:"dijo",     hint:"Preterite — what he said (completed speech act)"},
+      {label:"7. necesitar (él)",   correct:"necesitaba",hint:"Imperfect — ongoing need/state he was in"},
+    ]
+  },
+  {
+    title:"El restaurante favorito",
+    text:"Antes, [1] (ir/nosotros/impf) todos los viernes a un pequeño restaurante que [2] (estar/impf) cerca de casa. El dueño nos [3] (conocer/impf) bien y siempre nos [4] (recomendar/impf) los platos del día. Un viernes, [5] (llegar/nosotros/pret) y [6] (ver/nosotros/pret) un letrero: el restaurante [7] (cerrar/pret) para siempre.",
+    english:"Before, we used to go every Friday to a small restaurant that was near the house. The owner knew us well and always recommended the daily specials. One Friday, we arrived and saw a sign: the restaurant had closed for good.",
+    blanks:[
+      {label:"1. ir (nosotros)",      correct:"íbamos",    hint:"Imperfect — repeated habit (todos los viernes)"},
+      {label:"2. estar",              correct:"estaba",    hint:"Imperfect — ongoing location/state"},
+      {label:"3. conocer (él)",       correct:"conocía",   hint:"Imperfect — ongoing state of knowing"},
+      {label:"4. recomendar (él)",    correct:"recomendaba",hint:"Imperfect — habitual repeated action"},
+      {label:"5. llegar (nosotros)",  correct:"llegamos",  hint:"Preterite — specific event (un viernes)"},
+      {label:"6. ver (nosotros)",     correct:"vimos",     hint:"Preterite — sudden discovery"},
+      {label:"7. cerrar",             correct:"había cerrado",hint:"Perfect — completed before the narrative moment"},
+    ]
+  },
+  {
+    title:"El primer día de trabajo",
+    text:"[1] (Ser/impf) mi primer día en la empresa y [2] (estar/yo/impf) bastante nervioso. Mis nuevos compañeros [3] (trabajar/impf) cuando yo [4] (llegar/pret). El jefe me [5] (presentar/pret) a todos y me [6] (explicar/pret) mis responsabilidades. Durante la tarde, [7] (intentar/yo/impf) aprender todo lo posible.",
+    english:"It was my first day at the company and I was quite nervous. My new colleagues were working when I arrived. The boss introduced me to everyone and explained my responsibilities. During the afternoon, I was trying to learn as much as possible.",
+    blanks:[
+      {label:"1. Ser",              correct:"Era",        hint:"Imperfect — background description"},
+      {label:"2. estar (yo)",       correct:"estaba",     hint:"Imperfect — ongoing emotional state"},
+      {label:"3. trabajar (ellos)", correct:"trabajaban", hint:"Imperfect — in progress when I arrived"},
+      {label:"4. llegar (yo)",      correct:"llegué",     hint:"Preterite — my arrival interrupted their work"},
+      {label:"5. presentar (él)",   correct:"presentó",   hint:"Preterite — completed action"},
+      {label:"6. explicar (él)",    correct:"explicó",    hint:"Preterite — completed explanation"},
+      {label:"7. intentar (yo)",    correct:"intentaba",  hint:"Imperfect — ongoing effort during the afternoon"},
+    ]
+  },
+];
+
+function initStory() {
+  storyShuffled = shuffle([...STORIES]);
+  storyIndex    = 0;
+  storyCorrect  = 0;
+  storyTotal    = 0;
+  loadStory();
+}
+
+function loadStory() {
+  if (storyIndex >= storyShuffled.length) {
+    storyShuffled = shuffle([...STORIES]);
+    storyIndex = 0;
+  }
+  const story = storyShuffled[storyIndex];
+
+  document.getElementById('storyTitle').textContent   = story.title;
+  document.getElementById('storyEnglish').textContent = story.english;
+  document.getElementById('storyFeedback').textContent = '';
+  document.getElementById('storyFeedback').className   = 'feedback-msg';
+  document.getElementById('storyExplanations').style.display = 'none';
+  document.getElementById('storyExplanations').innerHTML     = '';
+
+  // Render text with numbered blanks highlighted
+  let displayText = story.text;
+  story.blanks.forEach((b, i) => {
+    const blankHtml = `<span style="display:inline-block;min-width:90px;border-bottom:2px solid var(--primary);color:var(--primary);font-weight:700;text-align:center;">[${i+1}]</span>`;
+    displayText = displayText.replace(`[${i+1}]`, blankHtml);
+    // Also remove the (hint) parts for display
+    displayText = displayText.replace(/\([^)]+\)/g, '');
+  });
+  document.getElementById('storyText').innerHTML = displayText;
+
+  // Render input blanks
+  const blanksContainer = document.getElementById('storyBlanks');
+  blanksContainer.innerHTML = '';
+  story.blanks.forEach((b, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+    const label = document.createElement('span');
+    label.style.cssText = 'font-size:12px;font-weight:700;color:var(--primary);min-width:130px;';
+    label.textContent = `[${i+1}] ${b.label}`;
+
+    const input = document.createElement('input');
+    input.className = 'rapid-input';
+    input.style.cssText = 'flex:1;font-size:14px;padding:8px 12px;';
+    input.placeholder = 'conjugated form...';
+    input.dataset.index = i;
+    input.autocomplete = 'off';
+    input.autocorrect  = 'off';
+    input.spellcheck   = false;
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') checkStory(); });
+
+    row.appendChild(label);
+    row.appendChild(input);
+    blanksContainer.appendChild(row);
+  });
+
+  if (blanksContainer.querySelector('input')) {
+    blanksContainer.querySelector('input').focus();
+  }
+  updateStoryScore();
+}
+
+function checkStory() {
+  const story   = storyShuffled[storyIndex];
+  const inputs  = document.querySelectorAll('#storyBlanks input');
+  let allFilled = true;
+  let allCorrect = true;
+
+  const explanations = [];
+
+  inputs.forEach((inp, i) => {
+    const val     = inp.value.trim();
+    const correct = story.blanks[i].correct;
+    if (!val) { allFilled = false; return; }
+
+    const ok = similar(val, correct) || val.toLowerCase() === correct.toLowerCase();
+    inp.className = 'rapid-input ' + (ok ? 'correct' : 'wrong');
+    storyTotal++;
+    if (ok) { storyCorrect++; }
+    else    { allCorrect = false; }
+
+    if (!ok) {
+      explanations.push(`<div style="margin-bottom:6px;"><strong>[${i+1}]</strong> ${val} → <strong style="color:var(--teal-dark);">${correct}</strong> — ${story.blanks[i].hint}</div>`);
+    }
+  });
+
+  if (!allFilled) {
+    document.getElementById('storyFeedback').textContent = 'Fill in all blanks first';
+    return;
+  }
+
+  const fb = document.getElementById('storyFeedback');
+  fb.textContent = allCorrect ? '✓ Perfect — all correct!' : `✗ ${explanations.length} error${explanations.length!==1?'s':''} — see below`;
+  fb.className   = allCorrect ? 'feedback-msg correct' : 'feedback-msg wrong';
+
+  if (explanations.length) {
+    const expEl = document.getElementById('storyExplanations');
+    expEl.style.cssText = 'background:var(--amber-light);border-left:4px solid var(--amber);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:0.75rem 1rem;font-size:13px;color:var(--amber-dark);line-height:1.7;';
+    expEl.innerHTML = explanations.join('');
+    expEl.style.display = 'block';
+  }
+
+  if (allCorrect) bumpStreak();
+  updateStoryScore();
+}
+
+function revealStory() {
+  const story  = storyShuffled[storyIndex];
+  const inputs = document.querySelectorAll('#storyBlanks input');
+  inputs.forEach((inp, i) => {
+    inp.value     = story.blanks[i].correct;
+    inp.className = 'rapid-input revealed';
+  });
+  const expEl = document.getElementById('storyExplanations');
+  expEl.style.cssText = 'background:var(--amber-light);border-left:4px solid var(--amber);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:0.75rem 1rem;font-size:13px;color:var(--amber-dark);line-height:1.7;';
+  expEl.innerHTML = story.blanks.map((b,i) =>
+    `<div style="margin-bottom:5px;"><strong>[${i+1}]</strong> <strong style="color:var(--teal-dark);">${b.correct}</strong> — ${b.hint}</div>`
+  ).join('');
+  expEl.style.display = 'block';
+}
+
+function nextStory() {
+  storyIndex++;
+  loadStory();
+}
+
+function updateStoryScore() {
+  const el  = document.getElementById('storyScore');
+  if (!el) return;
+  const pct = storyTotal > 0 ? Math.round(storyCorrect / storyTotal * 100) : 0;
+  el.textContent = storyTotal > 0
+    ? `✓ ${storyCorrect} / ${storyTotal} blanks (${pct}%) · ${STORIES.length} stories`
+    : `${STORIES.length} connected stories · preterite & imperfect in context`;
+}
+
+
+
+// ════════════════════════════════════════════════════════════════════
+// VERB FAMILIES MODE
+// ════════════════════════════════════════════════════════════════════
+
+const VERB_FAMILIES = [
+  {
+    id: 'yo_go',
+    label: 'Yo-go verbs',
+    pattern: 'Present yo → add -go',
+    description: 'These verbs have a completely regular conjugation except in the yo form, where -go is added. Once you know the yo form, the rest follows the standard present tense pattern. The -go also forms the root of the present subjunctive.',
+    tip: '🔑 Know the yo form → you know the present AND the subjunctive. hago → haga, hagas, haga, hagamos, hagan.',
+    verbs: [
+      { inf:'hacer',  en:'to do/make',   yo:'hago',  forms:{yo:'hago',tú:'haces',él:'hace',nosotros:'hacemos',ustedes:'hacen'}, subj:'hag-' },
+      { inf:'tener',  en:'to have',      yo:'tengo', forms:{yo:'tengo',tú:'tienes',él:'tiene',nosotros:'tenemos',ustedes:'tienen'}, subj:'teng-', note:'Also stem-changes e→ie (except yo/nosotros)' },
+      { inf:'poner',  en:'to put/place', yo:'pongo', forms:{yo:'pongo',tú:'pones',él:'pone',nosotros:'ponemos',ustedes:'ponen'}, subj:'pong-' },
+      { inf:'salir',  en:'to leave',     yo:'salgo', forms:{yo:'salgo',tú:'sales',él:'sale',nosotros:'salimos',ustedes:'salen'}, subj:'salg-' },
+      { inf:'venir',  en:'to come',      yo:'vengo', forms:{yo:'vengo',tú:'vienes',él:'viene',nosotros:'venimos',ustedes:'vienen'}, subj:'veng-', note:'Also stem-changes e→ie (except yo/nosotros)' },
+      { inf:'decir',  en:'to say/tell',  yo:'digo',  forms:{yo:'digo',tú:'dices',él:'dice',nosotros:'decimos',ustedes:'dicen'}, subj:'dig-', note:'Also stem-changes e→i' },
+      { inf:'traer',  en:'to bring',     yo:'traigo',forms:{yo:'traigo',tú:'traes',él:'trae',nosotros:'traemos',ustedes:'traen'}, subj:'traig-' },
+      { inf:'caer',   en:'to fall',      yo:'caigo', forms:{yo:'caigo',tú:'caes',él:'cae',nosotros:'caemos',ustedes:'caen'}, subj:'caig-' },
+      { inf:'oír',    en:'to hear',      yo:'oigo',  forms:{yo:'oigo',tú:'oyes',él:'oye',nosotros:'oímos',ustedes:'oyen'}, subj:'oig-' },
+    ]
+  },
+  {
+    id: 'e_ie',
+    label: 'e → ie (stem-change)',
+    pattern: 'Stem vowel e → ie (except nosotros)',
+    description: 'The stressed syllable vowel changes from e to ie in all forms except nosotros (and vosotros). This is called a boot verb because if you draw a line around the changed forms on a conjugation table, it looks like a boot.',
+    tip: '👢 Boot verbs: the stem changes in the "boot" (yo, tú, él, ustedes) but NOT in nosotros. Think of it as: the stressed syllable changes.',
+    verbs: [
+      { inf:'querer',  en:'to want/love',  yo:'quiero', forms:{yo:'quiero',tú:'quieres',él:'quiere',nosotros:'queremos',ustedes:'quieren'} },
+      { inf:'pensar',  en:'to think',      yo:'pienso', forms:{yo:'pienso',tú:'piensas',él:'piensa',nosotros:'pensamos',ustedes:'piensan'} },
+      { inf:'empezar', en:'to start',      yo:'empiezo',forms:{yo:'empiezo',tú:'empiezas',él:'empieza',nosotros:'empezamos',ustedes:'empiezan'} },
+      { inf:'entender',en:'to understand', yo:'entiendo',forms:{yo:'entiendo',tú:'entiendes',él:'entiende',nosotros:'entendemos',ustedes:'entienden'} },
+      { inf:'perder',  en:'to lose',       yo:'pierdo', forms:{yo:'pierdo',tú:'pierdes',él:'pierde',nosotros:'perdemos',ustedes:'pierden'} },
+      { inf:'tener',   en:'to have',       yo:'tengo',  forms:{yo:'tengo',tú:'tienes',él:'tiene',nosotros:'tenemos',ustedes:'tienen'}, note:'yo-go AND e→ie' },
+      { inf:'venir',   en:'to come',       yo:'vengo',  forms:{yo:'vengo',tú:'vienes',él:'viene',nosotros:'venimos',ustedes:'vienen'}, note:'yo-go AND e→ie' },
+      { inf:'preferir',en:'to prefer',     yo:'prefiero',forms:{yo:'prefiero',tú:'prefieres',él:'prefiere',nosotros:'preferimos',ustedes:'prefieren'} },
+    ]
+  },
+  {
+    id: 'o_ue',
+    label: 'o → ue (stem-change)',
+    pattern: 'Stem vowel o → ue (except nosotros)',
+    description: 'Same boot pattern — the stressed o becomes ue everywhere except nosotros. Also applies to u→ue in jugar (the only u→ue verb).',
+    tip: '👢 Same boot rule: o → ue in yo, tú, él, ustedes. Not nosotros. jugar follows the same boot pattern but u→ue.',
+    verbs: [
+      { inf:'poder',  en:'can / be able', yo:'puedo', forms:{yo:'puedo',tú:'puedes',él:'puede',nosotros:'podemos',ustedes:'pueden'} },
+      { inf:'volver', en:'to return',     yo:'vuelvo',forms:{yo:'vuelvo',tú:'vuelves',él:'vuelve',nosotros:'volvemos',ustedes:'vuelven'} },
+      { inf:'dormir', en:'to sleep',      yo:'duermo',forms:{yo:'duermo',tú:'duermes',él:'duerme',nosotros:'dormimos',ustedes:'duermen'} },
+      { inf:'contar', en:'to tell/count', yo:'cuento',forms:{yo:'cuento',tú:'cuentas',él:'cuenta',nosotros:'contamos',ustedes:'cuentan'} },
+      { inf:'encontrar',en:'to find',     yo:'encuentro',forms:{yo:'encuentro',tú:'encuentras',él:'encuentra',nosotros:'encontramos',ustedes:'encuentran'} },
+      { inf:'recordar',en:'to remember',  yo:'recuerdo',forms:{yo:'recuerdo',tú:'recuerdas',él:'recuerda',nosotros:'recordamos',ustedes:'recuerdan'} },
+      { inf:'jugar',  en:'to play (u→ue)',yo:'juego', forms:{yo:'juego',tú:'juegas',él:'juega',nosotros:'jugamos',ustedes:'juegan'}, note:'u→ue (only one in Spanish)' },
+    ]
+  },
+  {
+    id: 'e_i',
+    label: 'e → i (stem-change)',
+    pattern: 'Stem vowel e → i (except nosotros) — -ir verbs only',
+    description: 'Only -ir verbs have this pattern. The stressed e becomes i everywhere except nosotros. These verbs also have e→i in the preterite él/ustedes forms and in the gerund.',
+    tip: '⚠ Only -ir verbs do e→i. Also affects preterite él: pidió (not pedió). And gerund: pidiendo.',
+    verbs: [
+      { inf:'pedir',   en:'to ask for/order', yo:'pido',  forms:{yo:'pido',tú:'pides',él:'pide',nosotros:'pedimos',ustedes:'piden'} },
+      { inf:'seguir',  en:'to follow/continue',yo:'sigo',forms:{yo:'sigo',tú:'sigues',él:'sigue',nosotros:'seguimos',ustedes:'siguen'} },
+      { inf:'servir',  en:'to serve',          yo:'sirvo',forms:{yo:'sirvo',tú:'sirves',él:'sirve',nosotros:'servimos',ustedes:'sirven'} },
+      { inf:'repetir', en:'to repeat',         yo:'repito',forms:{yo:'repito',tú:'repites',él:'repite',nosotros:'repetimos',ustedes:'repiten'} },
+      { inf:'vestirse',en:'to get dressed',    yo:'me visto',forms:{yo:'me visto',tú:'te vistes',él:'se viste',nosotros:'nos vestimos',ustedes:'se visten'} },
+      { inf:'reír',    en:'to laugh',          yo:'me río', forms:{yo:'me río',tú:'te ríes',él:'se ríe',nosotros:'nos reímos',ustedes:'se ríen'} },
+    ]
+  },
+  {
+    id: 'uv_pret',
+    label: '-uv- preterite group',
+    pattern: 'Preterite stem ends in -uv- / -ud- / -us-',
+    description: 'These preterits share irregular stems and use the same set of endings (no accents): -e, -iste, -o, -imos, -ieron. They\'re sometimes called "strong preterits".',
+    tip: '💡 These preterites have NO accent marks (unlike regular preterits). tuve/tuviste/tuvo — no accents.',
+    verbs: [
+      { inf:'tener',   en:'to have',      yo:'tuve',   forms:{yo:'tuve',tú:'tuviste',él:'tuvo',nosotros:'tuvimos',ustedes:'tuvieron'}, tense:'Preterite' },
+      { inf:'estar',   en:'to be (temp)', yo:'estuve', forms:{yo:'estuve',tú:'estuviste',él:'estuvo',nosotros:'estuvimos',ustedes:'estuvieron'}, tense:'Preterite' },
+      { inf:'poder',   en:'can',          yo:'pude',   forms:{yo:'pude',tú:'pudiste',él:'pudo',nosotros:'pudimos',ustedes:'pudieron'}, tense:'Preterite' },
+      { inf:'saber',   en:'to know',      yo:'supe',   forms:{yo:'supe',tú:'supiste',él:'supo',nosotros:'supimos',ustedes:'supieron'}, tense:'Preterite' },
+      { inf:'querer',  en:'to want',      yo:'quise',  forms:{yo:'quise',tú:'quisiste',él:'quiso',nosotros:'quisimos',ustedes:'quisieron'}, tense:'Preterite' },
+      { inf:'venir',   en:'to come',      yo:'vine',   forms:{yo:'vine',tú:'viniste',él:'vino',nosotros:'vinimos',ustedes:'vinieron'}, tense:'Preterite' },
+    ]
+  },
+  {
+    id: 'ij_pret',
+    label: '-ij- preterite group',
+    pattern: 'Preterite stem ends in -ij- (-eron not -ieron)',
+    description: 'Verbs with preterite stems ending in j drop the i from -ieron → -eron. This affects decir, traer, and -ducir verbs (traducir, producir, conducir).',
+    tip: '⚠ dijeron NOT dijieron. The j eats the i. Same for trajeron, dijeron, condujeron.',
+    verbs: [
+      { inf:'decir',     en:'to say',     yo:'dije',     forms:{yo:'dije',tú:'dijiste',él:'dijo',nosotros:'dijimos',ustedes:'dijeron'}, tense:'Preterite' },
+      { inf:'traer',     en:'to bring',   yo:'traje',    forms:{yo:'traje',tú:'trajiste',él:'trajo',nosotros:'trajimos',ustedes:'trajeron'}, tense:'Preterite' },
+      { inf:'conducir',  en:'to drive',   yo:'conduje',  forms:{yo:'conduje',tú:'condujiste',él:'condujo',nosotros:'condujimos',ustedes:'condujeron'}, tense:'Preterite' },
+      { inf:'traducir',  en:'to translate',yo:'traduje', forms:{yo:'traduje',tú:'tradujiste',él:'tradujo',nosotros:'tradujimos',ustedes:'tradujeron'}, tense:'Preterite' },
+    ]
+  },
+  {
+    id: 'super_irreg',
+    label: 'Super-irregulars',
+    pattern: 'Must memorise — no predictable pattern',
+    description: 'These four verbs are so common and so irregular that they must simply be memorised. ser and ir share the same imperfect (era/iba) and the same preterite (fui/fue). Together with haber and estar they make up the backbone of the language.',
+    tip: '🚨 ser and ir are IDENTICAL in the preterite: fui, fuiste, fue, fuimos, fueron. Context tells you which. You will use these hundreds of times per day.',
+    verbs: [
+      { inf:'ser',   en:'to be (perm)', yo:'soy',   forms:{yo:'soy',tú:'eres',él:'es',nosotros:'somos',ustedes:'son'}, note:'Present — completely irregular' },
+      { inf:'ir',    en:'to go',        yo:'voy',   forms:{yo:'voy',tú:'vas',él:'va',nosotros:'vamos',ustedes:'van'}, note:'Present — completely irregular' },
+      { inf:'haber', en:'have (aux)',   yo:'he',    forms:{yo:'he',tú:'has',él:'ha',nosotros:'hemos',ustedes:'han'}, note:'Present — used for all perfect tenses' },
+      { inf:'ser/ir',en:'to be / to go (preterite)', yo:'fui', forms:{yo:'fui',tú:'fuiste',él:'fue',nosotros:'fuimos',ustedes:'fueron'}, note:'Preterite IDENTICAL for ser and ir', tense:'Preterite' },
+    ]
+  },
+];
+
+// State
+let familyIndex      = 0;
+let familyDrillPool  = [];
+let familyDrillIdx   = 0;
+let familyDrillScore = 0;
+let familyDrillTotal = 0;
+let familyDrillCurrent = null;
+
+function initFamilies() {
+  familyIndex = 0;
+  renderFamilyPills();
+  loadFamily(0);
+}
+
+function renderFamilyPills() {
+  const row = document.getElementById('familyPills');
+  row.innerHTML = '';
+  VERB_FAMILIES.forEach((fam, i) => {
+    const p = document.createElement('div');
+    p.className = 'pill' + (i === familyIndex ? ' active' : '');
+    p.textContent = fam.label;
+    p.onclick = () => { familyIndex = i; renderFamilyPills(); loadFamily(i); };
+    row.appendChild(p);
+  });
+}
+
+function loadFamily(idx) {
+  const fam = VERB_FAMILIES[idx];
+  document.getElementById('familyPatternLabel').textContent = fam.pattern;
+  document.getElementById('familyPatternDesc').textContent  = fam.description;
+  document.getElementById('familyTip').innerHTML = fam.tip;
+
+  // Render verb grid — show all forms in a compact table
+  const grid = document.getElementById('familyVerbGrid');
+  grid.innerHTML = '';
+  const pronouns = ['yo','tú','él','nosotros','ustedes'];
+  const labels   = ['yo','tú','él/ella','nosotros','ustedes'];
+
+  fam.verbs.forEach(verb => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:120px repeat(5,1fr);gap:4px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;';
+
+    const nameCell = document.createElement('div');
+    nameCell.innerHTML = `<strong>${verb.inf}</strong><br><span style="font-size:11px;color:var(--text-muted)">${verb.en}</span>${verb.note?`<br><span style="font-size:10px;color:var(--amber-dark);font-style:italic;">${verb.note}</span>`:''}`;
+    row.appendChild(nameCell);
+
+    pronouns.forEach((pr, i) => {
+      const cell = document.createElement('div');
+      cell.style.cssText = 'text-align:center;font-weight:600;color:var(--primary);';
+      if (pr === 'yo') cell.style.color = 'var(--header)';
+      cell.innerHTML = `<div style="font-size:10px;color:var(--text-hint);font-weight:400;">${labels[i]}</div>${verb.forms[pr] || '—'}`;
+      row.appendChild(cell);
+    });
+    grid.appendChild(row);
+  });
+
+  // Build drill pool for this family
+  buildFamilyDrillPool(fam);
+  familyDrillScore = 0;
+  familyDrillTotal = 0;
+  updateFamilyDrillScore();
+  loadFamilyDrillQ();
+}
+
+function buildFamilyDrillPool(fam) {
+  const pronounKeys  = ['yo','tú','él','nosotros','ustedes'];
+  const pronounLabel = {yo:'yo',tú:'tú',él:'él / ella',nosotros:'nosotros',ustedes:'ustedes'};
+  familyDrillPool = [];
+
+  fam.verbs.forEach(verb => {
+    pronounKeys.forEach(pr => {
+      const form = verb.forms[pr];
+      if (!form || form === '—') return;
+      familyDrillPool.push({
+        tenseName: verb.tense || 'Present',
+        pronoun:   pronounLabel[pr],
+        inf:       verb.inf,
+        en:        verb.en,
+        correct:   form,
+        note:      verb.note || '',
+        yoForm:    verb.yo || '',
+        isYo:      pr === 'yo',
+      });
+    });
+  });
+  familyDrillPool = shuffle(familyDrillPool);
+  familyDrillIdx  = 0;
+}
+
+function loadFamilyDrillQ() {
+  if (!familyDrillPool.length) return;
+  if (familyDrillIdx >= familyDrillPool.length) {
+    familyDrillPool = shuffle([...familyDrillPool]);
+    familyDrillIdx  = 0;
+  }
+  familyDrillCurrent = familyDrillPool[familyDrillIdx++];
+  const q = familyDrillCurrent;
+
+  document.getElementById('familyDrillTense').textContent   = q.tenseName;
+  document.getElementById('familyDrillPronoun').textContent = q.pronoun;
+  document.getElementById('familyDrillVerb').textContent    = q.inf;
+  document.getElementById('familyDrillHint').textContent    = q.en + (q.note ? ' · ' + q.note : '');
+
+  const input = document.getElementById('familyDrillInput');
+  input.value = '';
+  input.className = 'rapid-input';
+  document.getElementById('familyDrillFeedback').textContent = '';
+  document.getElementById('familyDrillFeedback').className   = 'feedback-msg';
+  input.focus();
+  updateFamilyDrillScore();
+}
+
+function checkFamilyDrill() {
+  const q   = familyDrillCurrent;
+  const val = document.getElementById('familyDrillInput').value.trim();
+  if (!val) return;
+
+  const ok = similar(val, q.correct) || val.toLowerCase() === q.correct.toLowerCase();
+  familyDrillTotal++;
+
+  const fb    = document.getElementById('familyDrillFeedback');
+  const input = document.getElementById('familyDrillInput');
+  input.className = 'rapid-input ' + (ok ? 'correct' : 'wrong');
+
+  if (ok) {
+    familyDrillScore++;
+    fb.textContent = '✓ ' + q.correct;
+    fb.className   = 'feedback-msg correct';
+    bumpStreak();
+    setTimeout(loadFamilyDrillQ, 600);
+  } else {
+    fb.innerHTML = `✗ &nbsp;<strong>${q.correct}</strong>`;
+    fb.className = 'feedback-msg wrong';
+  }
+  updateFamilyDrillScore();
+}
+
+function revealFamilyDrill() {
+  const q = familyDrillCurrent;
+  document.getElementById('familyDrillInput').value     = q.correct;
+  document.getElementById('familyDrillInput').className = 'rapid-input revealed';
+  document.getElementById('familyDrillFeedback').textContent = q.correct + (q.note ? ' — ' + q.note : '');
+}
+
+function nextFamilyDrill() {
+  familyDrillTotal++;
+  updateFamilyDrillScore();
+  loadFamilyDrillQ();
+}
+
+function updateFamilyDrillScore() {
+  const el  = document.getElementById('familyDrillScore');
+  if (!el) return;
+  const pct = familyDrillTotal > 0 ? Math.round(familyDrillScore / familyDrillTotal * 100) : 0;
+  el.textContent = familyDrillTotal > 0
+    ? `✓ ${familyDrillScore} / ${familyDrillTotal} (${pct}%)`
+    : 'Type the conjugated form and press Enter';
+}
+
+document.getElementById('familyDrillInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkFamilyDrill();
+});
+
+
+// ════════════════════════════════════════════════════════════════════
+// YO FORM → SUBJUNCTIVE MODE
+// ════════════════════════════════════════════════════════════════════
+
+// Verbs where yo → subjunctive is the KEY learning opportunity
+const YO_SUBJ_VERBS = [
+  {inf:'tener', en:'to have',     yo:'tengo', yoStem:'teng', subj:{yo:'tenga',tú:'tengas',él:'tenga',nosotros:'tengamos',ustedes:'tengan'}},
+  {inf:'hacer', en:'to do/make',  yo:'hago',  yoStem:'hag',  subj:{yo:'haga',tú:'hagas',él:'haga',nosotros:'hagamos',ustedes:'hagan'}},
+  {inf:'poner', en:'to put',      yo:'pongo', yoStem:'pong', subj:{yo:'ponga',tú:'pongas',él:'ponga',nosotros:'pongamos',ustedes:'pongan'}},
+  {inf:'salir', en:'to leave',    yo:'salgo', yoStem:'salg', subj:{yo:'salga',tú:'salgas',él:'salga',nosotros:'salgamos',ustedes:'salgan'}},
+  {inf:'venir', en:'to come',     yo:'vengo', yoStem:'veng', subj:{yo:'venga',tú:'vengas',él:'venga',nosotros:'vengamos',ustedes:'vengan'}},
+  {inf:'decir', en:'to say',      yo:'digo',  yoStem:'dig',  subj:{yo:'diga',tú:'digas',él:'diga',nosotros:'digamos',ustedes:'digan'}},
+  {inf:'traer', en:'to bring',    yo:'traigo',yoStem:'traig',subj:{yo:'traiga',tú:'traigas',él:'traiga',nosotros:'traigamos',ustedes:'traigan'}},
+  {inf:'caer',  en:'to fall',     yo:'caigo', yoStem:'caig', subj:{yo:'caiga',tú:'caigas',él:'caiga',nosotros:'caigamos',ustedes:'caigan'}},
+  {inf:'conocer',en:'to know',    yo:'conozco',yoStem:'conozc',subj:{yo:'conozca',tú:'conozcas',él:'conozca',nosotros:'conozcamos',ustedes:'conozcan'}},
+  {inf:'poder', en:'can/be able', yo:'puedo', yoStem:'pued', subj:{yo:'pueda',tú:'puedas',él:'pueda',nosotros:'podamos',ustedes:'puedan'}, note:'Stem-change preserved in subj (except nosotros)'},
+  {inf:'querer',en:'to want',     yo:'quiero',yoStem:'quier',subj:{yo:'quiera',tú:'quieras',él:'quiera',nosotros:'queramos',ustedes:'quieran'}, note:'Stem-change preserved'},
+  {inf:'ver',   en:'to see',      yo:'veo',   yoStem:'ve',   subj:{yo:'vea',tú:'veas',él:'vea',nosotros:'veamos',ustedes:'vean'}},
+  {inf:'dar',   en:'to give',     yo:'doy',   yoStem:'d',    subj:{yo:'dé',tú:'des',él:'dé',nosotros:'demos',ustedes:'den'}, note:'Irregular — very short forms'},
+  {inf:'ser',   en:'to be',       yo:'soy',   yoStem:'se',   subj:{yo:'sea',tú:'seas',él:'sea',nosotros:'seamos',ustedes:'sean'}, note:'Totally irregular subjunctive'},
+  {inf:'estar', en:'to be (temp)',yo:'estoy', yoStem:'est',  subj:{yo:'esté',tú:'estés',él:'esté',nosotros:'estemos',ustedes:'estén'}, note:'Accents on all except nosotros'},
+  {inf:'ir',    en:'to go',       yo:'voy',   yoStem:'vay',  subj:{yo:'vaya',tú:'vayas',él:'vaya',nosotros:'vayamos',ustedes:'vayan'}, note:'Totally irregular subjunctive'},
+  {inf:'saber', en:'to know',     yo:'sé',    yoStem:'sep',  subj:{yo:'sepa',tú:'sepas',él:'sepa',nosotros:'sepamos',ustedes:'sepan'}, note:'Totally irregular'},
+  {inf:'haber', en:'have (aux)',  yo:'he',    yoStem:'hay',  subj:{yo:'haya',tú:'hayas',él:'haya',nosotros:'hayamos',ustedes:'hayan'}, note:'Used for perfect subjunctive'},
+];
+
+let yoVerbIndex  = 0;
+let yoStep       = 'yo';   // 'yo' | 'subj' | 'both'
+let yoCorrect    = 0;
+let yoTotal      = 0;
+let yoShuffled   = [];
+let yoStage      = 'yo';   // current stage within a verb: 'yo' or 'subj'
+
+function initYoForm() {
+  yoShuffled  = shuffle([...YO_SUBJ_VERBS]);
+  yoVerbIndex = 0;
+  yoCorrect   = 0;
+  yoTotal     = 0;
+  yoStage     = 'yo';
+  loadYoVerb();
+}
+
+function setYoStep(step) {
+  yoStep = step;
+  document.querySelectorAll('[data-yostep]').forEach(b => {
+    b.classList.toggle('active', b.dataset.yostep === step);
+  });
+  yoStage = step === 'subj' ? 'subj' : 'yo';
+  loadYoVerb();
+}
+
+function loadYoVerb() {
+  if (yoVerbIndex >= yoShuffled.length) {
+    yoShuffled  = shuffle([...YO_SUBJ_VERBS]);
+    yoVerbIndex = 0;
+  }
+  const verb = yoShuffled[yoVerbIndex];
+
+  document.getElementById('yoFormVerb').textContent    = verb.inf;
+  document.getElementById('yoFormMeaning').textContent = verb.en;
+  document.getElementById('yoFormFeedback').textContent = '';
+  document.getElementById('yoFormFeedback').className   = 'feedback-msg';
+  document.getElementById('yoSubjFeedback').textContent = '';
+  document.getElementById('yoSubjFeedback').className   = 'feedback-msg';
+
+  if (yoStep === 'yo') {
+    yoStage = 'yo';
+    document.getElementById('yoFormTenseLabel').textContent = 'Present — what is the yo form?';
+    document.getElementById('yoFormBridge').textContent     = '';
+    showYoPanel('yo');
+  } else if (yoStep === 'subj') {
+    yoStage = 'subj';
+    document.getElementById('yoFormTenseLabel').textContent = 'Present subjunctive — build all 5 forms';
+    document.getElementById('yoFormBridge').innerHTML = `yo form: <strong>${verb.yo}</strong> → stem: <strong>${verb.yoStem}-</strong>`;
+    showYoPanel('subj');
+    buildYoSubjGrid(verb);
+  } else {
+    // 'both' — start with yo step
+    yoStage = 'yo';
+    document.getElementById('yoFormTenseLabel').textContent = 'Step 1 of 2 — What is the yo form?';
+    document.getElementById('yoFormBridge').textContent     = '';
+    showYoPanel('yo');
+  }
+
+  const input = document.getElementById('yoFormInput');
+  if (input && document.getElementById('yoStep1Panel').style.display !== 'none') {
+    input.value = '';
+    input.className = 'rapid-input';
+    input.focus();
+  }
+  updateYoScore();
+}
+
+function showYoPanel(which) {
+  document.getElementById('yoStep1Panel').style.display = which === 'yo'   ? 'block' : 'none';
+  document.getElementById('yoStep2Panel').style.display = which === 'subj' ? 'block' : 'none';
+}
+
+function buildYoSubjGrid(verb) {
+  const grid     = document.getElementById('yoSubjGrid');
+  const pronouns = ['yo','tú','él','nosotros','ustedes'];
+  const labels   = {yo:'yo',tú:'tú',él:'él/ella',nosotros:'nosotros',ustedes:'ustedes'};
+  grid.innerHTML = '';
+  pronouns.forEach(pr => {
+    const cell = document.createElement('div');
+    cell.className = 'conj-cell';
+    cell.dataset.pronoun = pr;
+    cell.innerHTML = `<span class="conj-pronoun">${labels[pr]}</span><input class="conj-input" data-pr="${pr}" placeholder="..." autocomplete="off" autocorrect="off" spellcheck="false">`;
+    grid.appendChild(cell);
+  });
+  grid.querySelectorAll('.conj-input').forEach((inp, i) => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const all = [...grid.querySelectorAll('.conj-input')];
+        if (i < all.length - 1) all[i+1].focus(); else checkYoSubj();
+      }
+    });
+  });
+  grid.querySelectorAll('.conj-input')[0].focus();
+}
+
+function checkYoForm() {
+  const verb  = yoShuffled[yoVerbIndex];
+  const val   = document.getElementById('yoFormInput').value.trim();
+  if (!val) return;
+
+  const ok = similar(val, verb.yo) || val.toLowerCase() === verb.yo.toLowerCase();
+  yoTotal++;
+  const fb    = document.getElementById('yoFormFeedback');
+  const input = document.getElementById('yoFormInput');
+  input.className = 'rapid-input ' + (ok ? 'correct' : 'wrong');
+
+  if (ok) {
+    yoCorrect++;
+    fb.textContent = `✓ ${verb.yo}`;
+    fb.className   = 'feedback-msg correct';
+    bumpStreak();
+
+    if (yoStep === 'both') {
+      // Progress to subjunctive step
+      setTimeout(() => {
+        yoStage = 'subj';
+        document.getElementById('yoFormTenseLabel').textContent = 'Step 2 of 2 — Now build the present subjunctive:';
+        document.getElementById('yoFormBridge').innerHTML = `${verb.yo} → stem: <strong>${verb.yoStem}-</strong> + endings -a/-as/-a/-amos/-an`;
+        showYoPanel('subj');
+        buildYoSubjGrid(verb);
+      }, 500);
+    } else {
+      setTimeout(nextYoVerb, 700);
+    }
+  } else {
+    fb.innerHTML = `✗ It's <strong>${verb.yo}</strong>${verb.note ? ' — ' + verb.note : ''}`;
+    fb.className = 'feedback-msg wrong';
+  }
+  updateYoScore();
+}
+
+function checkYoSubj() {
+  const verb  = yoShuffled[yoVerbIndex];
+  let allOk   = true;
+  const pronouns = ['yo','tú','él','nosotros','ustedes'];
+
+  document.querySelectorAll('#yoSubjGrid .conj-input').forEach(inp => {
+    const pr      = inp.dataset.pr;
+    const correct = verb.subj[pr] || '';
+    const val     = inp.value.trim();
+    const ok      = val.length > 0 && (similar(val, correct) || val.toLowerCase() === correct.toLowerCase());
+    inp.closest('.conj-cell').classList.toggle('correct', ok && val.length > 0);
+    inp.closest('.conj-cell').classList.toggle('wrong', !ok && val.length > 0);
+    if (!ok) allOk = false;
+  });
+
+  yoTotal++;
+  const fb = document.getElementById('yoSubjFeedback');
+  if (allOk) {
+    yoCorrect++;
+    fb.textContent = '✓ Perfect!';
+    fb.className   = 'feedback-msg correct';
+    bumpStreak();
+    setTimeout(nextYoVerb, 900);
+  } else {
+    fb.innerHTML = `✗ Check highlighted forms${verb.note ? ' — note: ' + verb.note : ''}`;
+    fb.className = 'feedback-msg wrong';
+  }
+  updateYoScore();
+}
+
+function revealYoSubj() {
+  const verb = yoShuffled[yoVerbIndex];
+  document.querySelectorAll('#yoSubjGrid .conj-input').forEach(inp => {
+    const pr  = inp.dataset.pr;
+    inp.value = verb.subj[pr] || '';
+    inp.closest('.conj-cell').className = 'conj-cell revealed';
+  });
+  document.getElementById('yoSubjFeedback').textContent = `Stem: ${verb.yoStem}- ${verb.note ? '· ' + verb.note : ''}`;
+}
+
+function nextYoVerb() {
+  yoVerbIndex++;
+  yoStage = yoStep === 'subj' ? 'subj' : 'yo';
+  loadYoVerb();
+}
+
+function updateYoScore() {
+  const el  = document.getElementById('yoFormScore');
+  if (!el) return;
+  const pct = yoTotal > 0 ? Math.round(yoCorrect / yoTotal * 100) : 0;
+  el.textContent = yoTotal > 0
+    ? `✓ ${yoCorrect} / ${yoTotal} (${pct}%) · ${YO_SUBJ_VERBS.length} verbs`
+    : `${YO_SUBJ_VERBS.length} verbs · yo form → subjunctive`;
+}
+
+document.getElementById('yoFormInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkYoForm();
+});
+
 
 /* ══ SPEAK ══ */
 
