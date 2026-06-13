@@ -400,6 +400,11 @@
   .tense-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
   .tense-table tr:hover td { background: var(--cream); }
   .tense-table .sp { font-weight: 600; color: var(--terracotta); }
+  .tense-table .sp.irr { color: var(--gold-dark); }
+  .tense-table td .irr-badge {
+    font-size: 10px; font-weight: 600; color: var(--terracotta);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
 
   /* ── Misc ── */
   .nav-row { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 1rem 0; }
@@ -556,6 +561,7 @@
     <div class="mode-toggle">
       <button class="mode-btn active" data-mode="flash">Flashcard</button>
       <button class="mode-btn" data-mode="rapid">Rapid fire</button>
+      <button class="mode-btn" data-mode="fillin">Fill-in</button>
     </div>
   </div>
 
@@ -645,66 +651,143 @@
       <button class="nav-btn" style="padding:3px 10px;font-size:11px;" onclick="skipRapid()">Skip →</button>
     </div>
   </div>
+
+  <!-- Fill-in mode -->
+  <div id="fillInMode" style="display:none;">
+    <div class="tip-box" id="fillInTip">The example sentence is shown with the key word blanked out. Type it in Spanish and press Enter.</div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-muted);margin-bottom:0.5rem;">
+      <span id="fillInCounter">1 / 20</span>
+      <span id="fillInScore">✓ 0  ✗ 0</span>
+    </div>
+
+    <!-- Sentence card -->
+    <div class="card" style="padding:1.25rem;margin-bottom:0.75rem;min-height:90px;">
+      <div style="font-size:11px;letter-spacing:0.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;" id="fillInType"></div>
+      <div style="font-size:18px;line-height:1.6;font-weight:500;" id="fillInSentence"></div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:6px;" id="fillInTranslation"></div>
+    </div>
+
+    <!-- Input -->
+    <div class="rapid-input-wrap">
+      <input class="rapid-input" id="fillInInput" type="text"
+        placeholder="Type the missing word…"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button class="submit-btn" onclick="checkFillIn()">→</button>
+    </div>
+    <div class="feedback-msg" id="fillInFeedback"></div>
+
+    <!-- Hint reveal -->
+    <div style="text-align:center;margin-top:0.5rem;">
+      <button class="nav-btn" id="fillInHintBtn" onclick="showFillInHint()" style="font-size:11px;padding:4px 10px;">💡 Show hint</button>
+    </div>
+    <div id="fillInHint" style="display:none;font-size:12px;color:var(--gold-dark);text-align:center;margin-top:4px;font-style:italic;"></div>
+
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:0.75rem;">
+      <button class="nav-btn" onclick="skipFillIn()">Skip →</button>
+    </div>
+  </div>
 </section>
 
 <!-- ══ TENSES ══ -->
 <section class="section" id="tab-tenses">
-  <div class="section-head">
+  <div class="section-head" style="margin-bottom:0.5rem;">
     <div class="section-title">Tense trainer</div>
     <div class="mode-toggle">
       <button class="mode-btn active" data-tensemode="learn">Learn</button>
-      <button class="mode-btn" data-tensemode="practice">Practice</button>
+      <button class="mode-btn" data-tensemode="practice">Conjugate</button>
+      <button class="mode-btn" data-tensemode="choose">Choose</button>
     </div>
+  </div>
+
+  <!-- LatAm mode note -->
+  <div class="tip-box" style="margin-bottom:0.75rem;padding:0.6rem 1rem;font-size:12px;">
+    🌎 <strong>Latin American mode</strong> — using <strong>ustedes</strong> instead of vosotros throughout
   </div>
 
   <div class="pill-row" id="tensePills"></div>
 
-  <!-- Learn mode -->
+  <!-- ── LEARN mode ── -->
   <div id="tenseLearned">
     <div id="tensePatternBox" class="pattern-box"></div>
     <div class="tense-chart">
       <table class="tense-table" id="tenseRefTable"></table>
     </div>
-    <div style="font-size:13px;color:var(--text-muted);text-align:center;margin-top:0.5rem;">
-      Switch to <strong>Practice</strong> to test your conjugations
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:0.5rem;">
+      Switch to <strong>Conjugate</strong> to practise or <strong>Choose</strong> for tense selection drills
     </div>
   </div>
 
-  <!-- Practice mode -->
+  <!-- ── CONJUGATE mode ── -->
   <div id="tensePractice" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+      <div class="mode-toggle" id="verbFilterToggle">
+        <button class="mode-btn active" data-verbfilter="all"       onclick="setVerbFilter('all')">All verbs</button>
+        <button class="mode-btn"        data-verbfilter="irregular" onclick="setVerbFilter('irregular')">Irregulars only</button>
+        <button class="mode-btn"        data-verbfilter="regular"   onclick="setVerbFilter('regular')">Regulars only</button>
+      </div>
+      <span id="practVerbCount" style="font-size:11px;color:var(--text-muted);"></span>
+    </div>
+
     <div class="tense-verb-display">
       <div class="tense-name" id="practTenseName">Present</div>
       <div class="infinitive" id="practVerb">hablar</div>
       <div class="meaning" id="practMeaning">to speak</div>
+      <div id="practIrregNote" style="font-size:11px;opacity:0.65;margin-top:4px;font-style:italic;"></div>
     </div>
 
     <div class="conj-grid" id="conjGrid"></div>
 
-    <div style="display:flex;gap:8px;justify-content:center;margin:1rem 0;">
+    <div style="display:flex;gap:8px;justify-content:center;margin:1rem 0;flex-wrap:wrap;">
       <button class="submit-btn" onclick="checkConj()">Check</button>
       <button class="nav-btn" onclick="revealConj()">Reveal</button>
-      <button class="nav-btn" onclick="nextTenseVerb()">Next verb →</button>
+      <button class="nav-btn" onclick="nextTenseVerb()">Next →</button>
     </div>
     <div class="feedback-msg" id="conjFeedback"></div>
   </div>
+
+  <!-- ── CHOOSE mode ── -->
+  <div id="tenseChoose" style="display:none;">
+    <div class="tip-box" style="margin-bottom:0.75rem;">
+      Read the sentence. Choose whether it needs <strong>Preterite</strong> or <strong>Imperfect</strong> — or identify the correct tense for the gap.
+    </div>
+
+    <div id="chooseCard" class="card" style="padding:1.5rem;margin-bottom:0.75rem;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:0.5rem;" id="chooseContext"></div>
+      <div style="font-size:20px;font-weight:600;line-height:1.5;margin-bottom:0.5rem;" id="chooseSentence"></div>
+      <div style="font-size:13px;color:var(--text-muted);" id="chooseEnglish"></div>
+    </div>
+
+    <div id="chooseOptions" style="display:flex;flex-direction:column;gap:8px;margin-bottom:0.75rem;"></div>
+    <div class="feedback-msg" id="chooseFeedback"></div>
+    <div id="chooseExplanation" style="display:none;background:var(--gold-light);border-left:4px solid var(--gold);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:0.75rem 1rem;font-size:13px;color:var(--gold-dark);margin-top:0.5rem;"></div>
+
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:1rem;">
+      <button class="nav-btn" id="chooseNextBtn" onclick="nextChooseQ()" style="display:none;">Next →</button>
+    </div>
+
+    <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:0.75rem;" id="chooseScore"></div>
+  </div>
+
 </section>
 
 <!-- ══ SPEAK ══ -->
 <section class="section" id="tab-speak">
 
-  <!-- Mode toggle: Speak practice vs Listen mode -->
+  <!-- Mode toggle -->
   <div class="section-head" style="margin-bottom:0.75rem;">
     <div class="section-title">Speak &amp; listen</div>
     <div class="mode-toggle">
-      <button class="mode-btn active" data-speakmode="speak" onclick="setSpeakMode('speak')">🎤 Speak</button>
-      <button class="mode-btn" data-speakmode="listen" onclick="setSpeakMode('listen')">👂 Listen</button>
+      <button class="mode-btn active" data-speakmode="shadow"   onclick="setSpeakMode('shadow')">🔊 Shadow</button>
+      <button class="mode-btn"        data-speakmode="listen"   onclick="setSpeakMode('listen')">👂 Listen</button>
+      <button class="mode-btn"        data-speakmode="dictation" onclick="setSpeakMode('dictation')">✏️ Dictation</button>
     </div>
   </div>
 
-  <!-- Voice & speed controls -->
-  <div class="card" style="padding:1rem;margin-bottom:0.75rem;">
+  <!-- Voice & speed controls (shared) -->
+  <div class="card" style="padding:0.85rem 1rem;margin-bottom:0.75rem;">
     <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-      <div style="flex:1;min-width:160px;">
+      <div style="flex:1;min-width:150px;">
         <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Voice</div>
         <select id="voiceSelect" onchange="onVoiceChange()" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--cream);color:var(--text);outline:none;">
           <option value="">Loading voices…</option>
@@ -718,8 +801,8 @@
           <button class="mode-btn" data-speed="1.1" onclick="setSpeed(1.1)">Fast</button>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:2px;">
-        <label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Auto-advance</label>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Auto</label>
         <div id="autoAdvanceToggle" onclick="toggleAutoAdvance()" style="width:36px;height:20px;border-radius:10px;background:var(--border);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;">
           <div id="autoAdvanceKnob" style="width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
         </div>
@@ -727,19 +810,18 @@
     </div>
   </div>
 
-  <!-- Category pills -->
+  <!-- Category pills (hidden in dictation — uses vocab directly) -->
   <div class="pill-row" id="speakCatPills" style="margin-bottom:0.75rem;"></div>
 
-  <!-- ── SPEAK MODE ── -->
-  <div id="speakModePanel">
+  <!-- ── SHADOW MODE ── -->
+  <div id="shadowModePanel">
+    <div class="tip-box" style="margin-bottom:0.75rem;">Listen, then say it aloud yourself. Use <strong>Slow</strong> speed to catch every sound, then <strong>Normal</strong> to match the natural rhythm.</div>
 
-    <!-- Phrase counter -->
     <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-muted);margin-bottom:0.5rem;">
       <span id="speakCounter">Phrase 1 of 10</span>
       <button class="nav-btn" style="padding:3px 10px;font-size:11px;" onclick="shuffleSpeakDeck()">⇄ Shuffle</button>
     </div>
 
-    <!-- Phrase card -->
     <div class="card" style="padding:1.5rem;text-align:center;margin-bottom:0.75rem;">
       <div id="speakPhonetic" style="font-size:11px;letter-spacing:1px;color:var(--text-hint);text-transform:uppercase;margin-bottom:6px;min-height:16px;"></div>
       <div class="speak-phrase" id="speakPhrase">Loading...</div>
@@ -747,53 +829,30 @@
       <div id="speakNotes" style="font-size:12px;color:var(--text-hint);margin-top:8px;font-style:italic;min-height:16px;"></div>
     </div>
 
-    <!-- Playback controls -->
     <div style="display:flex;gap:8px;justify-content:center;margin-bottom:0.75rem;flex-wrap:wrap;">
       <button class="listen-btn" onclick="playSpeakPhrase()" id="playBtn">🔊 Listen</button>
-      <button class="listen-btn" onclick="playSpeakPhrase(true)" style="background:var(--sage-light);color:var(--sage);">🔁 Repeat ×3</button>
+      <button class="listen-btn" onclick="playSpeakPhrase(true)" style="background:var(--sage-light);color:var(--sage);">🔁 ×3</button>
       <button class="nav-btn" onclick="prevSpeak()">← Prev</button>
       <button class="nav-btn" onclick="nextSpeak()">Next →</button>
     </div>
 
-    <!-- Syllable breakdown toggle -->
     <div style="text-align:center;margin-bottom:0.75rem;">
       <button class="nav-btn" id="syllableBtn" onclick="toggleSyllables()" style="font-size:12px;">Show syllable breakdown</button>
     </div>
     <div id="syllableBreakdown" style="display:none;background:var(--gold-light);border-radius:var(--radius-sm);padding:0.75rem;text-align:center;font-size:14px;color:var(--gold-dark);margin-bottom:0.75rem;"></div>
-
-    <!-- Mic section — shown only if speech recognition available -->
-    <div id="micSection" style="display:none;">
-      <div style="border-top:1px solid var(--border);padding-top:0.75rem;margin-top:0.25rem;text-align:center;">
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;">Now try saying it yourself</div>
-        <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
-        <div class="mic-status" id="micStatus" style="margin-top:8px;">Tap mic to record</div>
-        <div class="heard-text" id="heardText"></div>
-        <div class="feedback-msg" id="speakFeedback"></div>
-      </div>
-    </div>
-
-    <!-- Note shown if no mic support -->
-    <div id="noMicNote" style="display:none;text-align:center;font-size:13px;color:var(--text-muted);padding:0.5rem 0;">
-      🎧 Mic not available in this browser — use Listen to study pronunciation
-    </div>
-
   </div>
 
   <!-- ── LISTEN MODE ── -->
   <div id="listenModePanel" style="display:none;">
-
-    <div style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:0.75rem;">
-      Phrase plays automatically. Try to understand before revealing.
-    </div>
+    <div class="tip-box" style="margin-bottom:0.75rem;">Phrase plays automatically. Try to understand before revealing the translation.</div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-muted);margin-bottom:0.5rem;">
       <span id="listenCounter">Phrase 1 of 10</span>
       <button class="nav-btn" style="padding:3px 10px;font-size:11px;" onclick="shuffleSpeakDeck()">⇄ Shuffle</button>
     </div>
 
-    <!-- Listen card — translation hidden by default -->
     <div class="card" style="padding:1.5rem;text-align:center;margin-bottom:0.75rem;cursor:pointer;" onclick="revealListenTranslation()" id="listenCard">
-      <div id="listenPhrase" style="font-size:24px;font-weight:700;margin-bottom:8px;">Loading...</div>
+      <div id="listenPhrase" style="font-size:22px;font-weight:700;margin-bottom:8px;">Loading...</div>
       <div id="listenTranslation" style="font-size:15px;color:var(--text-muted);min-height:24px;transition:opacity 0.3s;" class="hidden-translation">tap to reveal</div>
       <div id="listenNotes" style="font-size:12px;color:var(--text-hint);margin-top:6px;font-style:italic;"></div>
     </div>
@@ -803,10 +862,71 @@
       <button class="nav-btn" onclick="prevListen()">← Prev</button>
       <button class="nav-btn" onclick="nextListen()">Next →</button>
     </div>
+  </div>
 
+  <!-- ── DICTATION MODE ── -->
+  <div id="dictationModePanel" style="display:none;">
+    <div class="tip-box" style="margin-bottom:0.75rem;">Listen carefully, then type exactly what you heard in Spanish. Tests real comprehension — not just reading recognition.</div>
+
+    <!-- Source toggle: phrases vs vocab sentences -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap;">
+      <div class="mode-toggle" id="dictSourceToggle">
+        <button class="mode-btn active" data-dictsrc="phrases" onclick="setDictSource('phrases')">Phrases</button>
+        <button class="mode-btn" data-dictsrc="vocab" onclick="setDictSource('vocab')">Vocab sentences</button>
+        <button class="mode-btn" data-dictsrc="mixed" onclick="setDictSource('mixed')">Mixed</button>
+      </div>
+      <span id="dictCounter" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
+
+    <!-- Difficulty: hide translation hint -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;">
+      <div class="mode-toggle" id="dictDiffToggle">
+        <button class="mode-btn active" data-dictdiff="normal" onclick="setDictDifficulty('normal')">Normal</button>
+        <button class="mode-btn" data-dictdiff="hard" onclick="setDictDifficulty('hard')">Hard</button>
+      </div>
+      <span style="font-size:11px;color:var(--text-muted);">Hard = no translation shown</span>
+    </div>
+
+    <!-- Score bar -->
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:0.5rem;">
+      <span id="dictScore">✓ 0 &nbsp; ✗ 0</span>
+      <button class="nav-btn" style="padding:3px 10px;font-size:11px;" onclick="shuffleDictDeck()">⇄ Shuffle</button>
+    </div>
+
+    <!-- Audio card -->
+    <div class="card" style="padding:1.25rem;text-align:center;margin-bottom:0.75rem;">
+      <div id="dictTranslationHint" style="font-size:13px;color:var(--text-muted);margin-bottom:0.75rem;min-height:20px;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <button class="listen-btn" onclick="playDictPhrase()" id="dictPlayBtn">🔊 Play</button>
+        <button class="listen-btn" onclick="playDictPhrase(true)" style="background:var(--sage-light);color:var(--sage);">🐢 Slow</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-hint);margin-top:8px;">Play as many times as you need</div>
+    </div>
+
+    <!-- Text input -->
+    <div class="rapid-input-wrap">
+      <input class="rapid-input" id="dictInput" type="text"
+        placeholder="Type what you heard in Spanish…"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button class="submit-btn" onclick="checkDictation()">→</button>
+    </div>
+    <div class="feedback-msg" id="dictFeedback" style="margin-top:6px;min-height:20px;"></div>
+
+    <!-- Answer reveal (shows after attempt) -->
+    <div id="dictAnswer" style="display:none;margin-top:0.5rem;background:var(--cream);border-radius:var(--radius-sm);padding:0.75rem 1rem;">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Correct answer</div>
+      <div id="dictAnswerText" style="font-size:16px;font-weight:600;color:var(--navy);"></div>
+      <div id="dictAnswerTranslation" style="font-size:13px;color:var(--text-muted);margin-top:2px;"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:0.75rem;">
+      <button class="nav-btn" id="dictNextBtn" onclick="nextDictation()" style="display:none;">Next →</button>
+      <button class="nav-btn" onclick="skipDictation()">Skip</button>
+    </div>
   </div>
 
 </section>
+
 
 <!-- ══ PROGRESS ══ -->
 <section class="section" id="tab-progress">
@@ -848,8 +968,11 @@
   </div>
 
   <div class="card">
-    <div style="font-size:14px;font-weight:600;margin-bottom:0.5rem;">⚑ Words to review</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;">Seen but score ≤ 2 — use the <strong>Review</strong> filter on flashcards to drill these</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+      <div style="font-size:14px;font-weight:600;">⚑ Words to review</div>
+      <button class="submit-btn" style="padding:5px 12px;font-size:12px;" onclick="startWeakDeck()">▶ Drill now</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;">Seen but score ≤ 2 across all categories — tap <strong>Drill now</strong> to study these directly</div>
     <div id="reviewList" style="font-size:13px;color:var(--text-muted);line-height:1.9;"></div>
   </div>
 </section>
@@ -889,99 +1012,232 @@ function mergeVocab() {
 
 
 const TENSES = {
+
   "Present": {
     key:"present",
-    pattern:"–AR verbs: -o, -as, -a, -amos, -áis, -an\n–ER verbs: -o, -es, -e, -emos, -éis, -en\n–IR verbs: -o, -es, -e, -imos, -ís, -en",
-    description:"Use for habitual actions, current states, and general truths. Also used (like English present continuous) for things happening now.",
+    latam:true,
+    pattern:"–AR: -o, -as, -a, -amos, -an\n–ER: -o, -es, -e, -emos, -en\n–IR: -o, -es, -e, -imos, -en",
+    description:"Habitual actions, current states, general truths. Also covers what English expresses as present continuous: ¿Qué haces? = What are you doing?",
     example:"Hablo español → I speak Spanish",
+    irregularNote:"Watch: yo-go verbs (tengo, hago, vengo, pongo, salgo), stem-changers (e→ie, o→ue, e→i), and total irregulars (soy, estoy, voy, sé).",
     verbs:[
-      {inf:"hablar",en:"to speak",conj:{yo:"hablo",tú:"hablas",él:"habla",nosotros:"hablamos",vosotros:"habláis",ellos:"hablan"}},
-      {inf:"comer",en:"to eat",conj:{yo:"como",tú:"comes",él:"come",nosotros:"comemos",vosotros:"coméis",ellos:"comen"}},
-      {inf:"vivir",en:"to live",conj:{yo:"vivo",tú:"vives",él:"vive",nosotros:"vivimos",vosotros:"vivís",ellos:"viven"}},
-      {inf:"tener",en:"to have",conj:{yo:"tengo",tú:"tienes",él:"tiene",nosotros:"tenemos",vosotros:"tenéis",ellos:"tienen"}},
-      {inf:"ir",en:"to go",conj:{yo:"voy",tú:"vas",él:"va",nosotros:"vamos",vosotros:"vais",ellos:"van"}},
-      {inf:"hacer",en:"to do/make",conj:{yo:"hago",tú:"haces",él:"hace",nosotros:"hacemos",vosotros:"hacéis",ellos:"hacen"}},
-      {inf:"querer",en:"to want",conj:{yo:"quiero",tú:"quieres",él:"quiere",nosotros:"queremos",vosotros:"queréis",ellos:"quieren"}},
-      {inf:"poder",en:"can/to be able",conj:{yo:"puedo",tú:"puedes",él:"puede",nosotros:"podemos",vosotros:"podéis",ellos:"pueden"}},
-      {inf:"saber",en:"to know",conj:{yo:"sé",tú:"sabes",él:"sabe",nosotros:"sabemos",vosotros:"sabéis",ellos:"saben"}},
-      {inf:"venir",en:"to come",conj:{yo:"vengo",tú:"vienes",él:"viene",nosotros:"venimos",vosotros:"venís",ellos:"vienen"}},
+      {inf:"hablar",en:"to speak",conj:{yo:"hablo",tú:"hablas",él:"habla",nosotros:"hablamos",ustedes:"hablan"},regular:true},
+      {inf:"comer",en:"to eat",conj:{yo:"como",tú:"comes",él:"come",nosotros:"comemos",ustedes:"comen"},regular:true},
+      {inf:"vivir",en:"to live",conj:{yo:"vivo",tú:"vives",él:"vive",nosotros:"vivimos",ustedes:"viven"},regular:true},
+      {inf:"ser",en:"to be (perm)",conj:{yo:"soy",tú:"eres",él:"es",nosotros:"somos",ustedes:"son"},irregular:true,note:"Totally irregular — memorise all forms"},
+      {inf:"estar",en:"to be (temp)",conj:{yo:"estoy",tú:"estás",él:"está",nosotros:"estamos",ustedes:"están"},irregular:true,note:"Totally irregular — all accents matter"},
+      {inf:"ir",en:"to go",conj:{yo:"voy",tú:"vas",él:"va",nosotros:"vamos",ustedes:"van"},irregular:true,note:"Totally irregular — voy/vas/va/vamos/van"},
+      {inf:"tener",en:"to have",conj:{yo:"tengo",tú:"tienes",él:"tiene",nosotros:"tenemos",ustedes:"tienen"},irregular:true,note:"yo-go + stem change e→ie (except yo/nosotros)"},
+      {inf:"hacer",en:"to do/make",conj:{yo:"hago",tú:"haces",él:"hace",nosotros:"hacemos",ustedes:"hacen"},irregular:true,note:"yo-go verb: hago in yo only"},
+      {inf:"poder",en:"can / be able",conj:{yo:"puedo",tú:"puedes",él:"puede",nosotros:"podemos",ustedes:"pueden"},irregular:true,note:"Stem-change o→ue (except nosotros)"},
+      {inf:"querer",en:"to want / love",conj:{yo:"quiero",tú:"quieres",él:"quiere",nosotros:"queremos",ustedes:"quieren"},irregular:true,note:"Stem-change e→ie (except nosotros)"},
+      {inf:"saber",en:"to know (facts)",conj:{yo:"sé",tú:"sabes",él:"sabe",nosotros:"sabemos",ustedes:"saben"},irregular:true,note:"Only yo is irregular: sé (just two letters)"},
+      {inf:"venir",en:"to come",conj:{yo:"vengo",tú:"vienes",él:"viene",nosotros:"venimos",ustedes:"vienen"},irregular:true,note:"yo-go + stem change e→ie"},
+      {inf:"poner",en:"to put / place",conj:{yo:"pongo",tú:"pones",él:"pone",nosotros:"ponemos",ustedes:"ponen"},irregular:true,note:"yo-go: pongo. Rest regular"},
+      {inf:"salir",en:"to leave / go out",conj:{yo:"salgo",tú:"sales",él:"sale",nosotros:"salimos",ustedes:"salen"},irregular:true,note:"yo-go: salgo. Rest regular"},
+      {inf:"decir",en:"to say / tell",conj:{yo:"digo",tú:"dices",él:"dice",nosotros:"decimos",ustedes:"dicen"},irregular:true,note:"yo-go + e→i stem change"},
+      {inf:"ver",en:"to see",conj:{yo:"veo",tú:"ves",él:"ve",nosotros:"vemos",ustedes:"ven"},irregular:true,note:"yo irregular: veo. Rest mostly regular"},
+      {inf:"dar",en:"to give",conj:{yo:"doy",tú:"das",él:"da",nosotros:"damos",ustedes:"dan"},irregular:true,note:"yo: doy. Rest regular (no accent)"},
+      {inf:"pedir",en:"to ask for / order",conj:{yo:"pido",tú:"pides",él:"pide",nosotros:"pedimos",ustedes:"piden"},irregular:true,note:"Stem-change e→i (except nosotros)"},
+      {inf:"dormir",en:"to sleep",conj:{yo:"duermo",tú:"duermes",él:"duerme",nosotros:"dormimos",ustedes:"duermen"},irregular:true,note:"Stem-change o→ue (except nosotros)"},
+      {inf:"jugar",en:"to play",conj:{yo:"juego",tú:"juegas",él:"juega",nosotros:"jugamos",ustedes:"juegan"},irregular:true,note:"Stem-change u→ue (except nosotros)"},
     ]
   },
-  "Preterite (past)": {
+
+  "Preterite (completed past)": {
     key:"preterite",
-    pattern:"–AR: -é, -aste, -ó, -amos, -asteis, -aron\n–ER/–IR: -í, -iste, -ió, -imos, -isteis, -ieron",
-    description:"For completed actions at a specific point in the past. 'I did', 'I went', 'I ate'. Think: it's done and over.",
-    example:"Comí paella ayer → I ate paella yesterday",
+    latam:true,
+    pattern:"–AR: -é, -aste, -ó, -amos, -aron\n–ER/IR: -í, -iste, -ió, -imos, -ieron",
+    description:"Completed actions at a specific point in the past. It happened, it's done, it's over. Use with: ayer, el lunes, en 2019, de repente, una vez.",
+    example:"Fui a Lima la semana pasada → I went to Lima last week",
+    irregularNote:"The big irregulars are completely unpredictable — ser/ir share the same forms (fui, fuiste...). The -uv- group: tener→tuv-, estar→estuv-, poder→pud-. Learn these by heart.",
     verbs:[
-      {inf:"hablar",en:"to speak",conj:{yo:"hablé",tú:"hablaste",él:"habló",nosotros:"hablamos",vosotros:"hablasteis",ellos:"hablaron"}},
-      {inf:"comer",en:"to eat",conj:{yo:"comí",tú:"comiste",él:"comió",nosotros:"comimos",vosotros:"comisteis",ellos:"comieron"}},
-      {inf:"ir",en:"to go",conj:{yo:"fui",tú:"fuiste",él:"fue",nosotros:"fuimos",vosotros:"fuisteis",ellos:"fueron"}},
-      {inf:"hacer",en:"to do/make",conj:{yo:"hice",tú:"hiciste",él:"hizo",nosotros:"hicimos",vosotros:"hicisteis",ellos:"hicieron"}},
-      {inf:"tener",en:"to have",conj:{yo:"tuve",tú:"tuviste",él:"tuvo",nosotros:"tuvimos",vosotros:"tuvisteis",ellos:"tuvieron"}},
-      {inf:"estar",en:"to be (temp)",conj:{yo:"estuve",tú:"estuviste",él:"estuvo",nosotros:"estuvimos",vosotros:"estuvisteis",ellos:"estuvieron"}},
-      {inf:"poder",en:"can",conj:{yo:"pude",tú:"pudiste",él:"pudo",nosotros:"pudimos",vosotros:"pudisteis",ellos:"pudieron"}},
-      {inf:"venir",en:"to come",conj:{yo:"vine",tú:"viniste",él:"vino",nosotros:"vinimos",vosotros:"vinisteis",ellos:"vinieron"}},
+      {inf:"hablar",en:"to speak",conj:{yo:"hablé",tú:"hablaste",él:"habló",nosotros:"hablamos",ustedes:"hablaron"},regular:true},
+      {inf:"comer",en:"to eat",conj:{yo:"comí",tú:"comiste",él:"comió",nosotros:"comimos",ustedes:"comieron"},regular:true},
+      {inf:"vivir",en:"to live",conj:{yo:"viví",tú:"viviste",él:"vivió",nosotros:"vivimos",ustedes:"vivieron"},regular:true},
+      {inf:"ser / ir",en:"to be / to go",conj:{yo:"fui",tú:"fuiste",él:"fue",nosotros:"fuimos",ustedes:"fueron"},irregular:true,note:"⚠ ser and ir are IDENTICAL in preterite — context tells you which"},
+      {inf:"tener",en:"to have",conj:{yo:"tuve",tú:"tuviste",él:"tuvo",nosotros:"tuvimos",ustedes:"tuvieron"},irregular:true,note:"-uv- stem — tuve/tuviste/tuvo/tuvimos/tuvieron"},
+      {inf:"estar",en:"to be (temp)",conj:{yo:"estuve",tú:"estuviste",él:"estuvo",nosotros:"estuvimos",ustedes:"estuvieron"},irregular:true,note:"-uv- stem — estuv- throughout"},
+      {inf:"hacer",en:"to do / make",conj:{yo:"hice",tú:"hiciste",él:"hizo",nosotros:"hicimos",ustedes:"hicieron"},irregular:true,note:"hice (c→z in él: hizo to keep soft sound)"},
+      {inf:"poder",en:"can / be able",conj:{yo:"pude",tú:"pudiste",él:"pudo",nosotros:"pudimos",ustedes:"pudieron"},irregular:true,note:"-ud- stem — pude/pudiste/pudo"},
+      {inf:"venir",en:"to come",conj:{yo:"vine",tú:"viniste",él:"vino",nosotros:"vinimos",ustedes:"vinieron"},irregular:true,note:"-in- stem — vine/viniste/vino"},
+      {inf:"decir",en:"to say / tell",conj:{yo:"dije",tú:"dijiste",él:"dijo",nosotros:"dijimos",ustedes:"dijeron"},irregular:true,note:"-ij- stem — note: dijeron (not dijieron)"},
+      {inf:"saber",en:"to know",conj:{yo:"supe",tú:"supiste",él:"supo",nosotros:"supimos",ustedes:"supieron"},irregular:true,note:"-up- stem — supe/supiste/supo"},
+      {inf:"querer",en:"to want",conj:{yo:"quise",tú:"quisiste",él:"quiso",nosotros:"quisimos",ustedes:"quisieron"},irregular:true,note:"-is- stem — quise/quisiste/quiso"},
+      {inf:"dar",en:"to give",conj:{yo:"di",tú:"diste",él:"dio",nosotros:"dimos",ustedes:"dieron"},irregular:true,note:"Uses -ER/-IR endings despite being -AR: di/diste/dio"},
+      {inf:"ver",en:"to see",conj:{yo:"vi",tú:"viste",él:"vio",nosotros:"vimos",ustedes:"vieron"},irregular:true,note:"No accents (monosyllables): vi/vio"},
+      {inf:"leer",en:"to read",conj:{yo:"leí",tú:"leíste",él:"leyó",nosotros:"leímos",ustedes:"leyeron"},irregular:true,note:"i→y between vowels: leyó/leyeron"},
+      {inf:"dormir",en:"to sleep",conj:{yo:"dormí",tú:"dormiste",él:"durmió",nosotros:"dormimos",ustedes:"durmieron"},irregular:true,note:"o→u stem change in él/ustedes only"},
+      {inf:"pedir",en:"to ask for",conj:{yo:"pedí",tú:"pediste",él:"pidió",nosotros:"pedimos",ustedes:"pidieron"},irregular:true,note:"e→i stem change in él/ustedes only"},
     ]
   },
-  "Imperfect (was/used to)": {
+
+  "Imperfect (past habit/state)": {
     key:"imperfect",
-    pattern:"–AR: -aba, -abas, -aba, -ábamos, -abais, -aban\n–ER/–IR: -ía, -ías, -ía, -íamos, -íais, -ían",
-    description:"For ongoing past states, habits, or background descriptions. 'I was eating', 'I used to live', 'It was raining'. Only 3 irregular verbs: ser, ir, ver.",
-    example:"Vivía en Perth → I used to live in Perth",
+    latam:true,
+    pattern:"–AR: -aba, -abas, -aba, -ábamos, -aban\n–ER/IR: -ía, -ías, -ía, -íamos, -ían",
+    description:"Ongoing states, repeated habits, or background in the past. 'I was doing', 'I used to do', 'It was raining'. Only 3 irregular verbs in the whole language: ser, ir, ver.",
+    example:"Cuando vivía en Perth, corría cada mañana → When I lived in Perth, I used to run every morning",
+    irregularNote:"Only 3 irregulars exist: ser (era), ir (iba), ver (veía). Everything else follows the pattern perfectly — one of the easiest tenses to learn.",
     verbs:[
-      {inf:"hablar",en:"to speak",conj:{yo:"hablaba",tú:"hablabas",él:"hablaba",nosotros:"hablábamos",vosotros:"hablabais",ellos:"hablaban"}},
-      {inf:"comer",en:"to eat",conj:{yo:"comía",tú:"comías",él:"comía",nosotros:"comíamos",vosotros:"comíais",ellos:"comían"}},
-      {inf:"ser",en:"to be (perm)",conj:{yo:"era",tú:"eras",él:"era",nosotros:"éramos",vosotros:"erais",ellos:"eran"}},
-      {inf:"ir",en:"to go",conj:{yo:"iba",tú:"ibas",él:"iba",nosotros:"íbamos",vosotros:"ibais",ellos:"iban"}},
-      {inf:"tener",en:"to have",conj:{yo:"tenía",tú:"tenías",él:"tenía",nosotros:"teníamos",vosotros:"teníais",ellos:"tenían"}},
-      {inf:"vivir",en:"to live",conj:{yo:"vivía",tú:"vivías",él:"vivía",nosotros:"vivíamos",vosotros:"vivíais",ellos:"vivían"}},
-      {inf:"poder",en:"can",conj:{yo:"podía",tú:"podías",él:"podía",nosotros:"podíamos",vosotros:"podíais",ellos:"podían"}},
+      {inf:"hablar",en:"to speak",conj:{yo:"hablaba",tú:"hablabas",él:"hablaba",nosotros:"hablábamos",ustedes:"hablaban"},regular:true},
+      {inf:"comer",en:"to eat",conj:{yo:"comía",tú:"comías",él:"comía",nosotros:"comíamos",ustedes:"comían"},regular:true},
+      {inf:"vivir",en:"to live",conj:{yo:"vivía",tú:"vivías",él:"vivía",nosotros:"vivíamos",ustedes:"vivían"},regular:true},
+      {inf:"tener",en:"to have",conj:{yo:"tenía",tú:"tenías",él:"tenía",nosotros:"teníamos",ustedes:"tenían"},regular:true,note:"Regular in imperfect! All -ía endings"},
+      {inf:"poder",en:"can",conj:{yo:"podía",tú:"podías",él:"podía",nosotros:"podíamos",ustedes:"podían"},regular:true,note:"Regular in imperfect"},
+      {inf:"hacer",en:"to do/make",conj:{yo:"hacía",tú:"hacías",él:"hacía",nosotros:"hacíamos",ustedes:"hacían"},regular:true,note:"Regular in imperfect"},
+      {inf:"querer",en:"to want",conj:{yo:"quería",tú:"querías",él:"quería",nosotros:"queríamos",ustedes:"querían"},regular:true,note:"Regular in imperfect"},
+      {inf:"ser",en:"to be (perm)",conj:{yo:"era",tú:"eras",él:"era",nosotros:"éramos",ustedes:"eran"},irregular:true,note:"ONE of only 3 imperfect irregulars: era/eras/era"},
+      {inf:"ir",en:"to go",conj:{yo:"iba",tú:"ibas",él:"iba",nosotros:"íbamos",ustedes:"iban"},irregular:true,note:"ONE of only 3 imperfect irregulars: iba/ibas/iba"},
+      {inf:"ver",en:"to see",conj:{yo:"veía",tú:"veías",él:"veía",nosotros:"veíamos",ustedes:"veían"},irregular:true,note:"ONE of only 3 imperfect irregulars: veía/veías/veía"},
     ]
   },
+
+  "Preterite vs Imperfect": {
+    key:"pret_vs_imp",
+    latam:true,
+    pattern:"PRETERITE = completed event (snapshot)\nIMPERFECT = background/habit/ongoing (movie)",
+    description:"The most important distinction in Spanish past tense. Preterite = a completed action (it happened and ended). Imperfect = ongoing state, background, or repeated habit. They work together: imperfect sets the scene, preterite is the event.",
+    example:"Llovía (imp) cuando salí (pret) → It was raining when I left",
+    irregularNote:"Trigger words: PRETERITE: ayer, de repente, una vez, el lunes, en 2019. IMPERFECT: siempre, normalmente, antes, todos los días, cuando era niño.",
+    verbs:[
+      {inf:"escenario 1",en:"I used to live / one day I moved",conj:{yo:"vivía / me mudé",tú:"vivías / te mudaste",él:"vivía / se mudó",nosotros:"vivíamos / nos mudamos",ustedes:"vivían / se mudaron"},note:"vivía (imp: ongoing) + me mudé (pret: event that ended it)"},
+      {inf:"escenario 2",en:"it was raining / I left",conj:{yo:"llovía / salí",tú:"llovía / saliste",él:"llovía / salió",nosotros:"llovía / salimos",ustedes:"llovía / salieron"},note:"llovía (imp: background) + salí (pret: the event)"},
+      {inf:"escenario 3",en:"I was eating / the phone rang",conj:{yo:"comía / sonó",tú:"comías / sonó",él:"comía / sonó",nosotros:"comíamos / sonó",ustedes:"comían / sonó"},note:"comía (imp: in progress) + sonó (pret: interrupting event)"},
+      {inf:"ser vs estar (past)",en:"he was tall / he was tired",conj:{yo:"era alto / estaba cansado",tú:"eras alto / estabas cansado",él:"era alto / estaba cansado",nosotros:"éramos / estábamos",ustedes:"eran / estaban"},note:"ser in imperfect = permanent traits. estar in imperfect = states"},
+    ]
+  },
+
   "Future": {
     key:"future",
-    pattern:"Add to the infinitive: -é, -ás, -á, -emos, -éis, -án\n(Same endings for ALL verbs! Just watch for 12 irregular stems.)",
-    description:"For things that will happen. Simply add endings to the full infinitive. Irregular stems to know: tendr-, vendr-, pondr-, saldr-, poder→podr-, hacer→har-, decir→dir-, ir→ir (uses it), ser→ser (uses it).",
-    example:"Viajaré en enero → I will travel in January",
+    latam:true,
+    pattern:"Add to infinitive: -é, -ás, -á, -emos, -án\nSame endings for ALL verbs. Irregular stems: tendr-, vendr-, pondr-, saldr-, podr-, har-, dir-, querr-, sabr-, cabr-",
+    description:"Future events and predictions. Also used to express probability in the present: ¿Dónde estará? = Where can he be? / I wonder where he is.",
+    example:"Viajaré por Sudamérica el año que viene → I will travel through South America next year",
+    irregularNote:"12 irregular stems — all take the same endings. The pattern: drop/modify the infinitive ending, add the future endings. hablar → hablar-é. tener → tendr-é.",
     verbs:[
-      {inf:"hablar",en:"to speak",conj:{yo:"hablaré",tú:"hablarás",él:"hablará",nosotros:"hablaremos",vosotros:"hablaréis",ellos:"hablarán"}},
-      {inf:"comer",en:"to eat",conj:{yo:"comeré",tú:"comerás",él:"comerá",nosotros:"comeremos",vosotros:"comeréis",ellos:"comerán"}},
-      {inf:"tener",en:"to have",conj:{yo:"tendré",tú:"tendrás",él:"tendrá",nosotros:"tendremos",vosotros:"tendréis",ellos:"tendrán"}},
-      {inf:"ir",en:"to go",conj:{yo:"iré",tú:"irás",él:"irá",nosotros:"iremos",vosotros:"iréis",ellos:"irán"}},
-      {inf:"hacer",en:"to do/make",conj:{yo:"haré",tú:"harás",él:"hará",nosotros:"haremos",vosotros:"haréis",ellos:"harán"}},
-      {inf:"poder",en:"can",conj:{yo:"podré",tú:"podrás",él:"podrá",nosotros:"podremos",vosotros:"podréis",ellos:"podrán"}},
-      {inf:"salir",en:"to leave",conj:{yo:"saldré",tú:"saldrás",él:"saldrá",nosotros:"saldremos",vosotros:"saldréis",ellos:"saldrán"}},
+      {inf:"hablar",en:"to speak",conj:{yo:"hablaré",tú:"hablarás",él:"hablará",nosotros:"hablaremos",ustedes:"hablarán"},regular:true},
+      {inf:"comer",en:"to eat",conj:{yo:"comeré",tú:"comerás",él:"comerá",nosotros:"comeremos",ustedes:"comerán"},regular:true},
+      {inf:"vivir",en:"to live",conj:{yo:"viviré",tú:"vivirás",él:"vivirá",nosotros:"viviremos",ustedes:"vivirán"},regular:true},
+      {inf:"tener",en:"to have",conj:{yo:"tendré",tú:"tendrás",él:"tendrá",nosotros:"tendremos",ustedes:"tendrán"},irregular:true,note:"tendr- stem"},
+      {inf:"venir",en:"to come",conj:{yo:"vendré",tú:"vendrás",él:"vendrá",nosotros:"vendremos",ustedes:"vendrán"},irregular:true,note:"vendr- stem"},
+      {inf:"poner",en:"to put",conj:{yo:"pondré",tú:"pondrás",él:"pondrá",nosotros:"pondremos",ustedes:"pondrán"},irregular:true,note:"pondr- stem"},
+      {inf:"salir",en:"to leave",conj:{yo:"saldré",tú:"saldrás",él:"saldrá",nosotros:"saldremos",ustedes:"saldrán"},irregular:true,note:"saldr- stem"},
+      {inf:"poder",en:"can",conj:{yo:"podré",tú:"podrás",él:"podrá",nosotros:"podremos",ustedes:"podrán"},irregular:true,note:"podr- stem"},
+      {inf:"hacer",en:"to do/make",conj:{yo:"haré",tú:"harás",él:"hará",nosotros:"haremos",ustedes:"harán"},irregular:true,note:"har- stem (drops the -ce-)"},
+      {inf:"decir",en:"to say",conj:{yo:"diré",tú:"dirás",él:"dirá",nosotros:"diremos",ustedes:"dirán"},irregular:true,note:"dir- stem"},
+      {inf:"querer",en:"to want",conj:{yo:"querré",tú:"querrás",él:"querrá",nosotros:"querremos",ustedes:"querrán"},irregular:true,note:"querr- stem"},
+      {inf:"saber",en:"to know",conj:{yo:"sabré",tú:"sabrás",él:"sabrá",nosotros:"sabremos",ustedes:"sabrán"},irregular:true,note:"sabr- stem"},
     ]
   },
+
   "Conditional": {
     key:"conditional",
-    pattern:"Add to infinitive (or irregular stem): -ía, -ías, -ía, -íamos, -íais, -ían\n(Same irregular stems as Future: tendr-, vendr-, etc.)",
-    description:"For 'would' — hypotheticals, polite requests, and wishes. 'I would go', 'I would like'. Often paired with 'si' (if) clauses.",
-    example:"¿Podrías ayudarme? → Could you help me?",
+    latam:true,
+    pattern:"Same irregular stems as Future + endings: -ía, -ías, -ía, -íamos, -ían\ntener→tendr-ía, hacer→har-ía, etc.",
+    description:"'Would' — hypotheticals, polite requests, wishes. Common uses: ¿Podrías...? (Could you...?), Me gustaría... (I would like...), Si tuviera dinero, viajaría más (If I had money I would travel more).",
+    example:"¿Podrías hablar más despacio? → Could you speak more slowly?",
+    irregularNote:"Exactly the same 12 irregular stems as the future tense. If you know the future irregulars, you know the conditional ones.",
     verbs:[
-      {inf:"hablar",en:"to speak",conj:{yo:"hablaría",tú:"hablarías",él:"hablaría",nosotros:"hablaríamos",vosotros:"hablaríais",ellos:"hablarían"}},
-      {inf:"comer",en:"to eat",conj:{yo:"comería",tú:"comerías",él:"comería",nosotros:"comeríamos",vosotros:"comeríais",ellos:"comerían"}},
-      {inf:"tener",en:"to have",conj:{yo:"tendría",tú:"tendrías",él:"tendría",nosotros:"tendríamos",vosotros:"tendríais",ellos:"tendrían"}},
-      {inf:"ir",en:"to go",conj:{yo:"iría",tú:"irías",él:"iría",nosotros:"iríamos",vosotros:"iríais",ellos:"irían"}},
-      {inf:"poder",en:"can",conj:{yo:"podría",tú:"podrías",él:"podría",nosotros:"podríamos",vosotros:"podríais",ellos:"podrían"}},
-      {inf:"hacer",en:"to do/make",conj:{yo:"haría",tú:"harías",él:"haría",nosotros:"haríamos",vosotros:"haríais",ellos:"harían"}},
+      {inf:"hablar",en:"to speak",conj:{yo:"hablaría",tú:"hablarías",él:"hablaría",nosotros:"hablaríamos",ustedes:"hablarían"},regular:true},
+      {inf:"tener",en:"to have",conj:{yo:"tendría",tú:"tendrías",él:"tendría",nosotros:"tendríamos",ustedes:"tendrían"},irregular:true,note:"tendr- stem (same as future)"},
+      {inf:"poder",en:"can",conj:{yo:"podría",tú:"podrías",él:"podría",nosotros:"podríamos",ustedes:"podrían"},irregular:true,note:"podr- stem — ¿podrías? = could you?"},
+      {inf:"hacer",en:"to do/make",conj:{yo:"haría",tú:"harías",él:"haría",nosotros:"haríamos",ustedes:"harían"},irregular:true,note:"har- stem"},
+      {inf:"querer",en:"to want",conj:{yo:"querría",tú:"querrías",él:"querría",nosotros:"querríamos",ustedes:"querrían"},irregular:true,note:"querr- stem — querría = I would want"},
+      {inf:"ir",en:"to go",conj:{yo:"iría",tú:"irías",él:"iría",nosotros:"iríamos",ustedes:"irían"},regular:true,note:"Regular endings on ir-"},
+      {inf:"ser",en:"to be",conj:{yo:"sería",tú:"serías",él:"sería",nosotros:"seríamos",ustedes:"serían"},regular:true,note:"Regular endings on ser-"},
+      {inf:"decir",en:"to say",conj:{yo:"diría",tú:"dirías",él:"diría",nosotros:"diríamos",ustedes:"dirían"},irregular:true,note:"dir- stem"},
+      {inf:"venir",en:"to come",conj:{yo:"vendría",tú:"vendrías",él:"vendría",nosotros:"vendríamos",ustedes:"vendrían"},irregular:true,note:"vendr- stem"},
     ]
   },
-  "Subjunctive": {
+
+  "Present Subjunctive": {
     key:"subjunctive",
-    pattern:"Flip the vowel! –AR → present endings with -e: -e,-es,-e,-emos,-éis,-en\n–ER/–IR → present endings with -a: -a,-as,-a,-amos,-áis,-an",
-    description:"For doubts, wishes, emotions, recommendations after 'que'. Often triggered by: quiero que, espero que, es importante que, no creo que, ojalá.",
+    latam:true,
+    pattern:"Flip the vowel: –AR uses -E endings, –ER/IR use -A endings\n–AR: -e,-es,-e,-emos,-en  /  –ER/IR: -a,-as,-a,-amos,-an",
+    description:"Doubts, wishes, emotions, recommendations after 'que'. Trigger verbs: quiero que, espero que, es importante que, no creo que, ojalá. Also after: para que, a menos que, cuando (future), antes de que.",
     example:"Espero que puedas venir → I hope you can come",
+    irregularNote:"Rule: start from the yo present indicative, drop the -o, add subjunctive endings. hago→hag-a. tengo→teng-a. This is why yo irregulars matter so much.",
     verbs:[
-      {inf:"hablar",en:"to speak",conj:{yo:"hable",tú:"hables",él:"hable",nosotros:"hablemos",vosotros:"habléis",ellos:"hablen"}},
-      {inf:"comer",en:"to eat",conj:{yo:"coma",tú:"comas",él:"coma",nosotros:"comamos",vosotros:"comáis",ellos:"coman"}},
-      {inf:"tener",en:"to have",conj:{yo:"tenga",tú:"tengas",él:"tenga",nosotros:"tengamos",vosotros:"tengáis",ellos:"tengan"}},
-      {inf:"ir",en:"to go",conj:{yo:"vaya",tú:"vayas",él:"vaya",nosotros:"vayamos",vosotros:"vayáis",ellos:"vayan"}},
-      {inf:"ser",en:"to be",conj:{yo:"sea",tú:"seas",él:"sea",nosotros:"seamos",vosotros:"seáis",ellos:"sean"}},
-      {inf:"poder",en:"can",conj:{yo:"pueda",tú:"puedas",él:"pueda",nosotros:"podamos",vosotros:"podáis",ellos:"puedan"}},
+      {inf:"hablar",en:"to speak",conj:{yo:"hable",tú:"hables",él:"hable",nosotros:"hablemos",ustedes:"hablen"},regular:true},
+      {inf:"comer",en:"to eat",conj:{yo:"coma",tú:"comas",él:"coma",nosotros:"comamos",ustedes:"coman"},regular:true},
+      {inf:"vivir",en:"to live",conj:{yo:"viva",tú:"vivas",él:"viva",nosotros:"vivamos",ustedes:"vivan"},regular:true},
+      {inf:"tener",en:"to have",conj:{yo:"tenga",tú:"tengas",él:"tenga",nosotros:"tengamos",ustedes:"tengan"},irregular:true,note:"tengo→teng-a: yo form minus -o, plus -a endings"},
+      {inf:"hacer",en:"to do",conj:{yo:"haga",tú:"hagas",él:"haga",nosotros:"hagamos",ustedes:"hagan"},irregular:true,note:"hago→hag-a"},
+      {inf:"ir",en:"to go",conj:{yo:"vaya",tú:"vayas",él:"vaya",nosotros:"vayamos",ustedes:"vayan"},irregular:true,note:"Totally irregular: vaya"},
+      {inf:"ser",en:"to be",conj:{yo:"sea",tú:"seas",él:"sea",nosotros:"seamos",ustedes:"sean"},irregular:true,note:"Totally irregular: sea"},
+      {inf:"estar",en:"to be (temp)",conj:{yo:"esté",tú:"estés",él:"esté",nosotros:"estemos",ustedes:"estén"},irregular:true,note:"esté (with accent to distinguish from este)"},
+      {inf:"poder",en:"can",conj:{yo:"pueda",tú:"puedas",él:"pueda",nosotros:"podamos",ustedes:"puedan"},irregular:true,note:"puedo→pued-a (stem-change preserved)"},
+      {inf:"decir",en:"to say",conj:{yo:"diga",tú:"digas",él:"diga",nosotros:"digamos",ustedes:"digan"},irregular:true,note:"digo→dig-a"},
+      {inf:"venir",en:"to come",conj:{yo:"venga",tú:"vengas",él:"venga",nosotros:"vengamos",ustedes:"vengan"},irregular:true,note:"vengo→veng-a"},
+      {inf:"saber",en:"to know",conj:{yo:"sepa",tú:"sepas",él:"sepa",nosotros:"sepamos",ustedes:"sepan"},irregular:true,note:"Totally irregular: sepa"},
+    ]
+  },
+
+  "Present Perfect": {
+    key:"perfect",
+    latam:true,
+    pattern:"haber (present) + past participle\nhe/has/ha/hemos/han + -ado (AR) / -ido (ER/IR)",
+    description:"Actions completed recently or with present relevance. 'I have eaten', 'Have you been to Peru?'. Less common in LatAm spoken speech than in Spain — Mexicans/Peruvians often use preterite instead. But essential for understanding and formal use.",
+    example:"He visitado Machu Picchu → I have visited Machu Picchu",
+    irregularNote:"Irregular past participles (must memorise): hacer→hecho, decir→dicho, ver→visto, volver→vuelto, escribir→escrito, poner→puesto, abrir→abierto, romper→roto, morir→muerto.",
+    verbs:[
+      {inf:"hablar",en:"to speak",conj:{yo:"he hablado",tú:"has hablado",él:"ha hablado",nosotros:"hemos hablado",ustedes:"han hablado"},regular:true,note:"-ado participle"},
+      {inf:"comer",en:"to eat",conj:{yo:"he comido",tú:"has comido",él:"ha comido",nosotros:"hemos comido",ustedes:"han comido"},regular:true,note:"-ido participle"},
+      {inf:"vivir",en:"to live",conj:{yo:"he vivido",tú:"has vivido",él:"ha vivido",nosotros:"hemos vivido",ustedes:"han vivido"},regular:true,note:"-ido participle"},
+      {inf:"hacer",en:"to do/make",conj:{yo:"he hecho",tú:"has hecho",él:"ha hecho",nosotros:"hemos hecho",ustedes:"han hecho"},irregular:true,note:"hacer→HECHO (irregular participle)"},
+      {inf:"decir",en:"to say",conj:{yo:"he dicho",tú:"has dicho",él:"ha dicho",nosotros:"hemos dicho",ustedes:"han dicho"},irregular:true,note:"decir→DICHO"},
+      {inf:"ver",en:"to see",conj:{yo:"he visto",tú:"has visto",él:"ha visto",nosotros:"hemos visto",ustedes:"han visto"},irregular:true,note:"ver→VISTO"},
+      {inf:"volver",en:"to return",conj:{yo:"he vuelto",tú:"has vuelto",él:"ha vuelto",nosotros:"hemos vuelto",ustedes:"han vuelto"},irregular:true,note:"volver→VUELTO"},
+      {inf:"escribir",en:"to write",conj:{yo:"he escrito",tú:"has escrito",él:"ha escrito",nosotros:"hemos escrito",ustedes:"han escrito"},irregular:true,note:"escribir→ESCRITO"},
+      {inf:"poner",en:"to put",conj:{yo:"he puesto",tú:"has puesto",él:"ha puesto",nosotros:"hemos puesto",ustedes:"han puesto"},irregular:true,note:"poner→PUESTO"},
+      {inf:"abrir",en:"to open",conj:{yo:"he abierto",tú:"has abierto",él:"ha abierto",nosotros:"hemos abierto",ustedes:"han abierto"},irregular:true,note:"abrir→ABIERTO"},
+      {inf:"romper",en:"to break",conj:{yo:"he roto",tú:"has roto",él:"ha roto",nosotros:"hemos roto",ustedes:"han roto"},irregular:true,note:"romper→ROTO"},
+      {inf:"ir / ser",en:"to go / to be",conj:{yo:"he ido / he sido",tú:"has ido / has sido",él:"ha ido / ha sido",nosotros:"hemos ido / hemos sido",ustedes:"han ido / han sido"},irregular:true,note:"ir→ido, ser→sido"},
+    ]
+  },
+
+  "Progressive (estar + gerund)": {
+    key:"progressive",
+    latam:true,
+    pattern:"estar (conjugated) + gerund (-ando / -iendo)\nhablar→hablando, comer→comiendo, vivir→viviendo",
+    description:"Actions in progress right now. 'I am eating', 'She was working'. Works across tenses: estoy (now), estaba (was), estaré (will be). Irregular gerunds: decir→diciendo, ir→yendo, poder→pudiendo, venir→viniendo.",
+    example:"Estoy aprendiendo español → I am learning Spanish",
+    irregularNote:"Gerund irregulars follow the same e→i stem change as preterite él: decir→diciendo, pedir→pidiendo, venir→viniendo, dormir→durmiendo, leer→leyendo.",
+    verbs:[
+      {inf:"hablar (present)",en:"speaking now",conj:{yo:"estoy hablando",tú:"estás hablando",él:"está hablando",nosotros:"estamos hablando",ustedes:"están hablando"},regular:true,note:"-ando gerund"},
+      {inf:"comer (present)",en:"eating now",conj:{yo:"estoy comiendo",tú:"estás comiendo",él:"está comiendo",nosotros:"estamos comiendo",ustedes:"están comiendo"},regular:true,note:"-iendo gerund"},
+      {inf:"trabajar (past)",en:"was working",conj:{yo:"estaba trabajando",tú:"estabas trabajando",él:"estaba trabajando",nosotros:"estábamos trabajando",ustedes:"estaban trabajando"},regular:true,note:"Imperfect estar + gerund = was doing"},
+      {inf:"hacer (present)",en:"doing now",conj:{yo:"estoy haciendo",tú:"estás haciendo",él:"está haciendo",nosotros:"estamos haciendo",ustedes:"están haciendo"},regular:true,note:"hacer→haciendo (regular gerund)"},
+      {inf:"decir (present)",en:"saying now",conj:{yo:"estoy diciendo",tú:"estás diciendo",él:"está diciendo",nosotros:"estamos diciendo",ustedes:"están diciendo"},irregular:true,note:"decir→DICIENDO (e→i stem change)"},
+      {inf:"dormir (present)",en:"sleeping now",conj:{yo:"estoy durmiendo",tú:"estás durmiendo",él:"está durmiendo",nosotros:"estamos durmiendo",ustedes:"están durmiendo"},irregular:true,note:"dormir→DURMIENDO (o→u)"},
+      {inf:"ir (present)",en:"going now",conj:{yo:"estoy yendo",tú:"estás yendo",él:"está yendo",nosotros:"estamos yendo",ustedes:"están yendo"},irregular:true,note:"ir→YENDO (i→y between vowels)"},
+      {inf:"leer (present)",en:"reading now",conj:{yo:"estoy leyendo",tú:"estás leyendo",él:"está leyendo",nosotros:"estamos leyendo",ustedes:"están leyendo"},irregular:true,note:"leer→LEYENDO (i→y)"},
+    ]
+  },
+
+  "Key Structures": {
+    key:"structures",
+    latam:true,
+    pattern:"Verb constructions that work like tenses:\nir a + inf  /  acabar de + inf  /  soler + inf\ntener que + inf  /  hay que + inf  /  deber + inf",
+    description:"These periphrastic structures are used constantly in spoken Spanish — often more than the formal future tense. Master these and you can express most time relationships naturally.",
+    example:"Voy a comer → I'm going to eat / Acabo de llegar → I just arrived",
+    irregularNote:"Each structure uses a conjugated verb + infinitive. The conjugated verb changes for person/tense; the infinitive stays the same. These are not technically tenses but verb phrases that function like them.",
+    verbs:[
+      {inf:"ir a + infinitive",en:"going to do (near future)",conj:{yo:"voy a viajar",tú:"vas a viajar",él:"va a viajar",nosotros:"vamos a viajar",ustedes:"van a viajar"},note:"⭐ Most common future in spoken LatAm Spanish"},
+      {inf:"acabar de + infinitive",en:"to have just done",conj:{yo:"acabo de llegar",tú:"acabas de llegar",él:"acaba de llegar",nosotros:"acabamos de llegar",ustedes:"acaban de llegar"},note:"⭐ Very useful: acabo de = I just (did something)"},
+      {inf:"soler + infinitive",en:"to usually do",conj:{yo:"suelo levantarme",tú:"sueles levantarte",él:"suele levantarse",nosotros:"solemos levantarnos",ustedes:"suelen levantarse"},note:"soler = to be in the habit of. Stem-change o→ue"},
+      {inf:"tener que + infinitive",en:"to have to do",conj:{yo:"tengo que ir",tú:"tienes que ir",él:"tiene que ir",nosotros:"tenemos que ir",ustedes:"tienen que ir"},note:"⭐ Personal obligation: tengo que = I have to"},
+      {inf:"hay que + infinitive",en:"one must / you need to",conj:{yo:"hay que reservar",tú:"hay que reservar",él:"hay que reservar",nosotros:"hay que reservar",ustedes:"hay que reservar"},note:"Impersonal — no subject. hay que = one must / you need to"},
+      {inf:"deber + infinitive",en:"should / must (moral)",conj:{yo:"debo descansar",tú:"debes descansar",él:"debe descansar",nosotros:"debemos descansar",ustedes:"deben descansar"},note:"deber = moral obligation. Softer than tener que"},
+      {inf:"poder + infinitive",en:"can / be able to",conj:{yo:"puedo ayudar",tú:"puedes ayudar",él:"puede ayudar",nosotros:"podemos ayudar",ustedes:"pueden ayudar"},note:"⭐ Very frequent: ¿puedes...? = can you...?"},
+      {inf:"seguir + gerund",en:"to keep doing",conj:{yo:"sigo aprendiendo",tú:"sigues aprendiendo",él:"sigue aprendiendo",nosotros:"seguimos aprendiendo",ustedes:"siguen aprendiendo"},note:"seguir + gerund = to keep/continue doing"},
+      {inf:"dejar de + infinitive",en:"to stop doing",conj:{yo:"dejé de fumar",tú:"dejaste de fumar",él:"dejó de fumar",nosotros:"dejamos de fumar",ustedes:"dejaron de fumar"},note:"dejar de = to stop (give up) doing something"},
+      {inf:"empezar a + infinitive",en:"to start doing",conj:{yo:"empiezo a entender",tú:"empiezas a entender",él:"empieza a entender",nosotros:"empezamos a entender",ustedes:"empiezan a entender"},note:"empezar a = to start to do. Stem-change e→ie"},
     ]
   }
-};
+
+};;
 
 const SPEAK_PHRASES = {
 
@@ -1118,11 +1374,36 @@ document.querySelectorAll('.nav-tab').forEach(t => {
 /* ══ VOCABULARY ══ */
 let currentLevel = 'All';
 let deckFilter = 'all'; // 'all' | 'review' | 'mastered'
+let retryQueue = []; // cards rated 'Again' — reinserted 3-5 positions ahead
+
+
+// ── Quick-access deck launchers ───────────────────────────────────────────────
+
+// Called from Progress tab "Drill now" button — switches to vocab tab, loads weak deck
+function startWeakDeck() {
+  // Switch to vocabulary tab
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const vocabTab = document.querySelector('[data-tab="vocab"]');
+  if (vocabTab) vocabTab.classList.add('active');
+  document.getElementById('tab-vocab').classList.add('active');
+
+  // Set to weak deck and load
+  currentCat = '__weak__';
+  buildCatPills();
+  loadDeck();
+}
+
+// Refresh random deck (called from within the random deck)
+function refreshRandomDeck() {
+  if (currentCat === '__random__') loadDeck();
+}
 
 function buildCatPills() {
   const row = document.getElementById('catPills');
   row.innerHTML = '';
-  // Level filter pills first
+
+  // ── Level filter row ────────────────────────────────────────────────────
   ['All','A1','A2','B1','B2'].forEach(lv => {
     const p = document.createElement('div');
     p.className = 'pill' + (lv === currentLevel ? ' active' : '');
@@ -1133,11 +1414,34 @@ function buildCatPills() {
     p.onclick = () => { currentLevel = lv; buildCatPills(); loadDeck(); };
     row.appendChild(p);
   });
-  // Spacer
-  const sp = document.createElement('div');
-  sp.style.cssText = 'width:100%;height:2px;';
-  row.appendChild(sp);
-  // Category pills
+
+  // ── Divider ─────────────────────────────────────────────────────────────
+  const div1 = document.createElement('div');
+  div1.style.cssText = 'width:100%;height:1px;background:var(--border);margin:4px 0;';
+  row.appendChild(div1);
+
+  // ── Special cross-category decks ────────────────────────────────────────
+  const specials = [
+    { key: '__weak__',   label: '⚑ My weak words',  title: 'Your lowest-scoring words across all categories' },
+    { key: '__all__',    label: '⊞ All words',       title: 'Every word shuffled together' },
+    { key: '__random__', label: '⚄ Random 20',       title: '20 words picked at random from across all categories' },
+  ];
+  specials.forEach(({key, label, title}) => {
+    const p = document.createElement('div');
+    p.className = 'pill' + (currentCat === key ? ' active' : '');
+    p.style.fontWeight = '500';
+    p.textContent = label;
+    p.title = title;
+    p.onclick = () => { currentCat = key; buildCatPills(); loadDeck(); };
+    row.appendChild(p);
+  });
+
+  // ── Divider ─────────────────────────────────────────────────────────────
+  const div2 = document.createElement('div');
+  div2.style.cssText = 'width:100%;height:1px;background:var(--border);margin:4px 0;';
+  row.appendChild(div2);
+
+  // ── Standard category pills ──────────────────────────────────────────────
   Object.keys(VOCAB).forEach(cat => {
     const p = document.createElement('div');
     p.className = 'pill' + (cat === currentCat ? ' active' : '');
@@ -1154,7 +1458,9 @@ function filterByLevel(cards) {
 
 // Get the progress score for a card (0–5), -1 if never seen
 function getCardScore(cat, card) {
-  const key = cat + '::' + card.es;
+  // Respect _cat tag for cross-category cards
+  const effectiveCat = card._cat || cat;
+  const key = effectiveCat + '::' + card.es;
   if (!progress[key]) return -1;
   return progress[key].score || 0;
 }
@@ -1208,34 +1514,127 @@ function updateDeckFilterCount(count, total) {
   }
 }
 
+
+// ── Cross-category deck builders ──────────────────────────────────────────────
+
+// Flatten all vocab across all categories, tagging each card with its source cat
+function getAllWords() {
+  const all = [];
+  Object.entries(VOCAB).forEach(([cat, words]) => {
+    words.forEach(w => all.push({...w, _cat: cat}));
+  });
+  return all;
+}
+
+// Weak words: lowest-scoring cards seen at least once, cross-category
+// Falls back to never-seen cards if not enough scored ones
+function getWeakWords(limit) {
+  const all = getAllWords();
+  // Apply level filter
+  const levelled = filterByLevel(all);
+
+  // Score each card (using its source cat for the progress key)
+  const scored = levelled.map(w => {
+    const key = (w._cat || currentCat) + '::' + w.es;
+    const p = progress[key];
+    const score = p ? (p.score || 0) : -1; // -1 = never seen
+    const seen  = p ? (p.seen  || 0) : 0;
+    return {...w, _score: score, _seen: seen};
+  });
+
+  // Sort: seen+struggling first (score 0-2), then never seen, then ok
+  const seen_struggling = scored.filter(w => w._seen > 0 && w._score <= 2)
+                                 .sort((a,b) => a._score - b._score);
+  const never_seen      = scored.filter(w => w._seen === 0);
+  const borderline      = scored.filter(w => w._seen > 0 && w._score === 3);
+
+  const pool = [...seen_struggling, ...never_seen, ...borderline];
+
+  if (!pool.length) return shuffle(levelled).slice(0, limit || 50);
+  return shuffle(pool).slice(0, limit || 50);
+}
+
+// All words shuffled, level-filtered
+function getAllWordsDeck() {
+  return shuffle(filterByLevel(getAllWords()));
+}
+
+// Random sample of N words across all categories, level-filtered
+function getRandomDeck(n) {
+  const all = shuffle(filterByLevel(getAllWords()));
+  return all.slice(0, n || 20);
+}
+
+// Get a display label for the special deck
+function getSpecialDeckLabel(key) {
+  if (key === '__weak__')   return '⚑ Weak words';
+  if (key === '__all__')    return '⊞ All words';
+  if (key === '__random__') return '⚄ Random 20';
+  return key;
+}
+
 function loadDeck() {
-  // Re-sync currentCat in case VOCAB loaded after initial assignment
+  retryQueue = [];
+  hideRetryIndicator();
+  hideLevelFallbackNote();
+
+  // ── Special cross-category decks ─────────────────────────────────────────
+  const isSpecial = ['__weak__','__all__','__random__'].includes(currentCat);
+
+  if (isSpecial) {
+    let pool = [];
+    if (currentCat === '__weak__') {
+      pool = getWeakWords(60);
+      const seen = pool.filter(w => w._seen > 0).length;
+      const unseen = pool.length - seen;
+      const parts = [];
+      if (seen)   parts.push(`${seen} struggled`);
+      if (unseen) parts.push(`${unseen} not yet seen`);
+      showLevelFallbackNote(`⚑ Weak words deck: ${pool.length} cards (${parts.join(', ')})`);
+    } else if (currentCat === '__all__') {
+      pool = getAllWordsDeck();
+      showLevelFallbackNote(`⊞ All words: ${pool.length} cards shuffled`);
+    } else if (currentCat === '__random__') {
+      pool = getRandomDeck(20);
+      showLevelFallbackNote(`⚄ Random selection: ${pool.length} cards from across all categories`);
+    }
+
+    if (!pool.length) {
+      pool = shuffle(filterByLevel(getAllWords()));
+    }
+
+    currentDeck = pool;
+    updateDeckFilterCount(pool.length, pool.length);
+    deckIndex = 0;
+    isFlipped = false;
+    showCard();
+    updateVocabProgress();
+    if (currentMode === 'rapid') loadRapidQ();
+    if (currentMode === 'fillin') loadFillIn();
+    return;
+  }
+
+  // ── Standard category deck ───────────────────────────────────────────────
   const cats = Object.keys(VOCAB);
   if (cats.length && !VOCAB[currentCat]) currentCat = cats[0];
   const raw = VOCAB[currentCat] || [];
 
-  // Apply level filter first, then deck filter
   const levelFiltered = filterByLevel([...raw]);
   const deckFiltered  = filterByDeck(levelFiltered, currentCat);
-
-  // Update the count badge
   updateDeckFilterCount(deckFiltered.length, levelFiltered.length);
 
   if (deckFiltered.length >= 3) {
     currentDeck = shuffle(deckFiltered);
-    hideLevelFallbackNote();
   } else if (deckFiltered.length > 0) {
     currentDeck = shuffle(deckFiltered);
     const label = deckFilter === 'review' ? 'review cards' : deckFilter === 'mastered' ? 'mastered cards' : 'cards';
     showLevelFallbackNote(`Only ${deckFiltered.length} ${label} here — showing what's available.`);
   } else if (deckFilter !== 'all') {
-    // No cards match current deck filter — fall back to full level-filtered set
     currentDeck = shuffle(levelFiltered.length ? levelFiltered : [...raw]);
     const label = deckFilter === 'review' ? 'words to review' : 'mastered words';
     showLevelFallbackNote(`No ${label} in this category yet — showing all cards.`);
   } else if (levelFiltered.length >= 3) {
     currentDeck = shuffle(levelFiltered);
-    hideLevelFallbackNote();
   } else if (levelFiltered.length > 0) {
     currentDeck = shuffle(levelFiltered);
     showLevelFallbackNote(`Only ${levelFiltered.length} ${currentLevel} word${levelFiltered.length!==1?'s':''} — showing what's available.`);
@@ -1243,15 +1642,15 @@ function loadDeck() {
     currentDeck = shuffle([...raw]);
     if (currentLevel !== 'All') {
       showLevelFallbackNote(`No ${currentLevel} words in "${currentCat}" — showing all levels instead.`);
-    } else {
-      hideLevelFallbackNote();
     }
   }
+
   deckIndex = 0;
   isFlipped = false;
   showCard();
   updateVocabProgress();
   if (currentMode === 'rapid') loadRapidQ();
+  if (currentMode === 'fillin') loadFillIn();
 }
 
 function showLevelFallbackNote(msg) {
@@ -1468,7 +1867,9 @@ function speakCurrentCard() {
 
 function rateCard(rating) {
   const word = currentDeck[deckIndex];
-  const key = currentCat + '::' + word.es;
+  // Use source category (_cat) for cross-category decks, otherwise currentCat
+  const catForKey = word._cat || currentCat;
+  const key = catForKey + '::' + word.es;
   if (!progress[key]) progress[key] = {seen:0,correct:0,score:0};
   progress[key].seen++;
   if (rating === 'easy') {
@@ -1515,13 +1916,41 @@ function trackSeen(word) {
 }
 
 function nextCard() {
+  // If there's a retry card due, splice it in 3–5 positions ahead
+  if (retryQueue.length > 0) {
+    const retryCard = retryQueue.shift();
+    const insertAt = Math.min(deckIndex + 3 + Math.floor(Math.random() * 3), currentDeck.length);
+    currentDeck.splice(insertAt, 0, retryCard);
+    showRetryIndicator(retryQueue.length + 1);
+  }
+
   deckIndex++;
+
   // Reshuffle and loop when deck is exhausted
   if (deckIndex >= currentDeck.length) {
     deckIndex = 0;
     currentDeck = shuffle([...currentDeck]);
+    retryQueue = []; // clear any leftover retries on full loop
+    hideRetryIndicator();
   }
   showCard();
+}
+
+function showRetryIndicator(count) {
+  let el = document.getElementById('retryIndicator');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'retryIndicator';
+    el.style.cssText = 'font-size:11px;color:var(--terracotta);font-weight:600;text-align:center;margin-top:3px;';
+    const pb = document.getElementById('vocabProgress');
+    if (pb) pb.parentNode.insertAdjacentElement('afterend', el);
+  }
+  el.textContent = `↩ ${count} card${count!==1?'s':''} coming back for review`;
+}
+
+function hideRetryIndicator() {
+  const el = document.getElementById('retryIndicator');
+  if (el) el.textContent = '';
 }
 function prevCard() { deckIndex = (deckIndex - 1 + currentDeck.length) % currentDeck.length; showCard(); }
 
@@ -1537,15 +1966,20 @@ function updateVocabProgress() {
 }
 
 /* Rapid fire */
-let currentMode = 'flash';
+let currentMode = 'flash'; // 'flash' | 'rapid' | 'fillin'
 document.querySelectorAll('[data-mode]').forEach(b => {
   b.addEventListener('click', () => {
     currentMode = b.dataset.mode;
     document.querySelectorAll('[data-mode]').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
-    document.getElementById('flashMode').style.display = currentMode === 'flash' ? 'block' : 'none';
-    document.getElementById('rapidMode').style.display = currentMode === 'rapid' ? 'block' : 'none';
-    if (currentMode === 'rapid') { rapidScore = 0; rapidStreak = 0; loadRapidQ(); }
+    document.getElementById('flashMode').style.display  = currentMode === 'flash'  ? 'block' : 'none';
+    document.getElementById('rapidMode').style.display  = currentMode === 'rapid'  ? 'block' : 'none';
+    document.getElementById('fillInMode').style.display = currentMode === 'fillin' ? 'block' : 'none';
+    // Direction toggle only meaningful for flash/rapid
+    document.getElementById('directionToggle').style.display = currentMode === 'fillin' ? 'none' : 'flex';
+    document.getElementById('flashStats').style.display = currentMode === 'fillin' ? 'none' : 'flex';
+    if (currentMode === 'rapid')  { rapidScore = 0; rapidStreak = 0; loadRapidQ(); }
+    if (currentMode === 'fillin') { fillInScore = 0; fillInWrong = 0; loadFillIn(); }
   });
 });
 
@@ -1612,6 +2046,193 @@ function similar(a, b) {
   return strip(stripArt(a)) === strip(stripArt(b)) || strip(a) === strip(b);
 }
 
+
+/* ── Fill-in mode ── */
+let fillInScore = 0;
+let fillInWrong = 0;
+let fillInDeck   = [];
+let fillInIndex  = 0;
+let fillInCurrentCard = null;
+let fillInCurrentBlank = '';
+let fillInRevealed = false;
+
+// Build a deck of cards that have usable example sentences with the target word in them
+function buildFillInDeck() {
+  const raw = currentDeck.length ? currentDeck : (VOCAB[currentCat] || []);
+  // Only use cards where the example sentence contains the Spanish word
+  fillInDeck = shuffle(raw.filter(card => {
+    if (!card.ex || card.ex.length < 5) return false;
+    // Check the Spanish word (or its root) appears in the example
+    const esWords = card.es.toLowerCase().replace(/[¿¡.,;:!?]/g,'').split(/\s+/);
+    const exLower = card.ex.toLowerCase();
+    return esWords.some(w => w.length >= 3 && exLower.includes(w.slice(0,4)));
+  }));
+  // Fallback: use all cards even without perfect sentence match
+  if (fillInDeck.length < 3) fillInDeck = shuffle([...raw]);
+}
+
+function loadFillIn() {
+  buildFillInDeck();
+  fillInIndex = 0;
+  fillInScore = 0;
+  fillInWrong = 0;
+  updateFillInScore();
+  showFillInCard();
+}
+
+function showFillInCard() {
+  if (!fillInDeck.length) return;
+
+  // Reshuffle on loop
+  if (fillInIndex >= fillInDeck.length) {
+    fillInIndex = 0;
+    fillInDeck = shuffle([...fillInDeck]);
+  }
+
+  fillInCurrentCard = fillInDeck[fillInIndex];
+  const card = fillInCurrentCard;
+  fillInRevealed = false;
+
+  // Find the correct answer — the Spanish word or first meaningful word of es phrase
+  const esWords = card.es.split(/[\s\/]+/);
+  // For phrases, blank the longest word; for single words, blank the whole thing
+  fillInCurrentBlank = esWords.reduce((a, b) => b.length > a.length ? b : a, esWords[0]);
+  // Strip punctuation from blank
+  fillInCurrentBlank = fillInCurrentBlank.replace(/[¿¡.,;:!?«»]/g, '');
+
+  // Build the sentence with blank
+  const ex = card.ex || '';
+  let displaySentence = ex;
+  const blankLower = fillInCurrentBlank.toLowerCase();
+  
+  // Try to find and replace the target word in the sentence (case-insensitive)
+  // Match the word with optional conjugation variations (first 4+ chars match)
+  const root = blankLower.slice(0, Math.max(4, blankLower.length - 2));
+  const regex = new RegExp('(' + root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[a-záéíóúñü]*)', 'i');
+  
+  let blanked = false;
+  if (regex.test(ex)) {
+    displaySentence = ex.replace(regex, (match) => {
+      fillInCurrentBlank = match; // use the actual conjugated form from the sentence
+      blanked = true;
+      return '___';
+    });
+  }
+
+  // If we couldn't blank it naturally, just show the sentence as context
+  // and ask for the dictionary form
+  const sentenceEl = document.getElementById('fillInSentence');
+  const typeEl = document.getElementById('fillInType');
+  const transEl = document.getElementById('fillInTranslation');
+  const input = document.getElementById('fillInInput');
+
+  typeEl.textContent = (card.level ? '[' + card.level + '] ' : '') + card.type;
+  
+  if (blanked) {
+    sentenceEl.innerHTML = displaySentence.replace('___',
+      '<span style="display:inline-block;min-width:80px;border-bottom:2px solid var(--terracotta);color:var(--terracotta);font-weight:700;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>'
+    );
+    transEl.textContent = '🌐 ' + card.en;
+    input.placeholder = 'Type the missing Spanish word…';
+  } else {
+    // No sentence match — show the English, ask for Spanish
+    sentenceEl.innerHTML = '<span style="font-size:15px;color:var(--text-muted);">Translate: </span>' + card.en;
+    transEl.textContent = ex ? '📖 ' + ex : '';
+    input.placeholder = 'Type the Spanish word…';
+    fillInCurrentBlank = card.es.split('/')[0].trim();
+  }
+
+  // Reset UI
+  input.value = '';
+  input.className = 'rapid-input';
+  document.getElementById('fillInFeedback').textContent = '';
+  document.getElementById('fillInFeedback').className = 'feedback-msg';
+  document.getElementById('fillInHint').style.display = 'none';
+  document.getElementById('fillInHintBtn').style.display = 'inline-block';
+  document.getElementById('fillInCounter').textContent =
+    (fillInIndex + 1) + ' / ' + fillInDeck.length;
+  input.focus();
+}
+
+function checkFillIn() {
+  if (fillInRevealed) { nextFillIn(); return; }
+  const input = document.getElementById('fillInInput');
+  const val = input.value.trim();
+  if (!val) return;
+
+  const correct = fillInCurrentBlank;
+  const ok = similar(val, correct) ||
+             val.toLowerCase() === correct.toLowerCase();
+
+  const fb = document.getElementById('fillInFeedback');
+  input.className = 'rapid-input ' + (ok ? 'correct' : 'wrong');
+
+  if (ok) {
+    fb.textContent = '✓ Correct!';
+    fb.className = 'feedback-msg correct';
+    fillInScore++;
+    bumpStreak();
+    // Update progress score positively
+    const card = fillInCurrentCard;
+    const key = (card._cat || currentCat) + '::' + card.es;
+    if (!progress[key]) progress[key] = {seen:0,correct:0,score:0};
+    progress[key].seen++;
+    progress[key].correct++;
+    progress[key].score = Math.min(5, (progress[key].score||0)+1);
+    saveProgress();
+    updateFillInScore();
+    setTimeout(nextFillIn, 700);
+  } else {
+    fb.innerHTML = '✗ &nbsp;<span style="font-weight:600;color:var(--terracotta);">' + correct + '</span>';
+    fb.className = 'feedback-msg wrong';
+    fillInWrong++;
+    fillInRevealed = true;
+    // Update progress score negatively
+    const card = fillInCurrentCard;
+    const key = (card._cat || currentCat) + '::' + card.es;
+    if (!progress[key]) progress[key] = {seen:0,correct:0,score:0};
+    progress[key].seen++;
+    progress[key].score = Math.max(0, (progress[key].score||0)-1);
+    // Add to retry queue so it comes back in flashcard mode too
+    retryQueue.push({...card});
+    saveProgress();
+    updateFillInScore();
+    setTimeout(nextFillIn, 1600);
+  }
+}
+
+function showFillInHint() {
+  const card = fillInCurrentCard;
+  const hint = card.hint || '';
+  const hintEl = document.getElementById('fillInHint');
+  hintEl.textContent = hint || '💡 First letter: ' + fillInCurrentBlank[0].toUpperCase();
+  hintEl.style.display = 'block';
+  document.getElementById('fillInHintBtn').style.display = 'none';
+}
+
+function skipFillIn() {
+  fillInWrong++;
+  updateFillInScore();
+  nextFillIn();
+}
+
+function nextFillIn() {
+  fillInIndex++;
+  fillInRevealed = false;
+  showFillInCard();
+}
+
+function updateFillInScore() {
+  const total = fillInScore + fillInWrong;
+  const pct = total > 0 ? Math.round(fillInScore / total * 100) : 0;
+  document.getElementById('fillInScore').textContent =
+    '✓ ' + fillInScore + '  ✗ ' + fillInWrong + (total > 0 ? '  (' + pct + '%)' : '');
+}
+
+document.getElementById('fillInInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkFillIn();
+});
+
 /* ── Streak ── */
 function bumpStreak() {
   globalStreak++;
@@ -1626,184 +2247,400 @@ function bumpStreak() {
 function resetStreakUI() { globalStreak = 0; settings.streak = 0; document.getElementById('streakCount').textContent = 0; localStorage.setItem('sm_settings', JSON.stringify(settings)); }
 
 /* ══ TENSES ══ */
+
+// ── State ────────────────────────────────────────────────────────────────────
+let verbFilter = 'all';        // 'all' | 'irregular' | 'regular'
+let conjShuffledFiltered = [];
+let chooseQIndex = 0;
+let chooseScore = 0;
+let chooseTotal = 0;
+let chooseAnswered = false;
+
+// LatAm pronouns — vosotros replaced with ustedes
+const LATAM_PRONOUNS = ['yo','tú','él/ella','nosotros','ustedes'];
+// Map from data key to display
+const PRONOUN_MAP = {yo:'yo', tú:'tú', él:'él/ella', nosotros:'nosotros', ustedes:'ustedes'};
+
+// ── Tense-choice (Choose mode) questions ─────────────────────────────────────
+const CHOOSE_QUESTIONS = [
+  // Preterite vs Imperfect
+  {sentence:"Cuando era niño, ___ (vivir) en Buenos Aires.",blank:"vivía",options:["viví","vivía","he vivido","vivo"],correct:1,tense:"Imperfect",explanation:"Era niño = ongoing past state (imperfect). Vivir here is also an ongoing state in the past → vivía (imperfect)."},
+  {sentence:"Ayer ___ (salir) a las ocho de la mañana.",blank:"salí",options:["salía","salí","he salido","saldré"],correct:1,tense:"Preterite",explanation:"Ayer = specific completed past event → preterite. salí (I left)."},
+  {sentence:"De repente el teléfono ___ (sonar) mientras comía.",blank:"sonó",options:["sonaba","sonó","suena","ha sonado"],correct:1,tense:"Preterite",explanation:"De repente = sudden completed event interrupting background action → preterite. sonó (it rang)."},
+  {sentence:"Todos los veranos ___ (ir) a la playa con la familia.",blank:"íbamos",options:["fuimos","vamos","íbamos","hemos ido"],correct:2,tense:"Imperfect",explanation:"Todos los veranos = repeated habitual action → imperfect. íbamos (we used to go)."},
+  {sentence:"El año pasado ___ (visitar) Machu Picchu.",blank:"visité",options:["visitaba","visité","visito","visitaré"],correct:1,tense:"Preterite",explanation:"El año pasado + a specific completed trip → preterite. visité (I visited)."},
+  {sentence:"Cuando llegué al hotel, ya ___ (ser) las once.",blank:"eran",options:["fueron","son","eran","serán"],correct:2,tense:"Imperfect",explanation:"Background state/time when I arrived → imperfect. eran las once (it was eleven)."},
+  {sentence:"Siempre ___ (desayunar) café con leche cuando era estudiante.",blank:"desayunaba",options:["desayuné","desayuno","desayunaba","desayunaré"],correct:2,tense:"Imperfect",explanation:"Siempre + when I was a student = habitual repeated action → imperfect. desayunaba (I used to have)."},
+  {sentence:"Me ___ (caer) el pasaporte en el aeropuerto.",blank:"cayó",options:["caía","cayó","ha caído","cae"],correct:1,tense:"Preterite",explanation:"A specific one-time completed event → preterite. cayó (it fell)."},
+  {sentence:"Antes, los viajes en avión ___ (ser) mucho más caros.",blank:"eran",options:["fueron","eran","han sido","son"],correct:1,tense:"Imperfect",explanation:"Antes = general past habit/state, describing how things used to be → imperfect. eran (they were/used to be)."},
+  {sentence:"___ (Estar) comiendo cuando sonó la alarma.",blank:"Estaba",options:["Estuve","Estoy","Estaba","He estado"],correct:2,tense:"Imperfect (progressive)",explanation:"Background ongoing action interrupted by the alarm → imperfect progressive. Estaba comiendo (I was eating)."},
+
+  // Present Perfect vs Preterite
+  {sentence:"___ (ver, yo) esa película tres veces.",blank:"He visto",options:["Vi","Veía","He visto","Veo"],correct:2,tense:"Present Perfect",explanation:"Repeated experience without a specific past time = present relevance → present perfect. He visto (I have seen). Note: in LatAm, vi is also common here."},
+  {sentence:"Esta mañana ___ (desayunar) tarde.",blank:"desayuné",options:["desayunaba","desayunaré","he desayunado","desayuné"],correct:3,tense:"Preterite (LatAm)",explanation:"Esta mañana is a completed time period (morning is over) → preterite in LatAm Spanish. (In Spain: he desayunado.)"},
+
+  // Future vs ir a + inf
+  {sentence:"El vuelo ___ (salir) a las tres de la tarde.",blank:"sale / saldrá / va a salir",options:["salió","salía","saldrá","salía"],correct:2,tense:"Future",explanation:"A scheduled future event → future tense. saldrá (will leave). Present tense (sale) is also natural for schedules."},
+  {sentence:"¡Cuidado! ___ (caer, tú).",blank:"Te vas a caer",options:["Te caerás","Te caías","Te vas a caer","Te caes"],correct:2,tense:"ir a (near future)",explanation:"Immediate warning about something about to happen → ir a + infinitive is the most natural choice. Te vas a caer (you're going to fall)."},
+
+  // Conditional
+  {sentence:"¿___ (poder, tú) hablar más despacio, por favor?",blank:"Podrías",options:["Puedes","Pudiste","Podrías","Puedas"],correct:2,tense:"Conditional",explanation:"Polite request → conditional. Podrías (could you) is much more polite than puedes (can you)."},
+  {sentence:"Si tuviera más dinero, ___ (viajar) por todo el mundo.",blank:"viajaría",options:["viajé","viajo","viajaré","viajaría"],correct:3,tense:"Conditional",explanation:"Si + imperfect subjunctive → conditional. viajaría (I would travel). The classic hypothetical structure."},
+
+  // Subjunctive triggers
+  {sentence:"Espero que todo ___ (salir) bien.",blank:"salga",options:["sale","saldrá","salió","salga"],correct:3,tense:"Present Subjunctive",explanation:"Espero que = I hope that → triggers subjunctive. salga (subjunctive of salir)."},
+  {sentence:"Es importante que ___ (llegar) a tiempo.",blank:"llegues",options:["llegas","llegarás","llegues","llegabas"],correct:2,tense:"Present Subjunctive",explanation:"Es importante que = it's important that → triggers subjunctive. llegues (subjunctive of llegar, tú form)."},
+  {sentence:"Cuando ___ (llegar) a Lima, llámame.",blank:"llegues",options:["llegas","llegues","llegarás","llegabas"],correct:1,tense:"Present Subjunctive",explanation:"Cuando + future event → subjunctive (not indicative). llegues (subj.). When future, cuando triggers subjunctive."},
+  {sentence:"No creo que él ___ (tener) razón.",blank:"tenga",options:["tiene","tendrá","tenía","tenga"],correct:3,tense:"Present Subjunctive",explanation:"No creo que = I don't think that → doubt triggers subjunctive. tenga (subjunctive of tener)."},
+
+  // Key structures
+  {sentence:"Acabo de ___ (llegar) — todavía no me he sentado.",blank:"llegar",options:["llego","llegué","llegado","llegar"],correct:3,tense:"Structures: acabar de",explanation:"Acabar de + INFINITIVE = to have just done. acabo de llegar = I just arrived."},
+  {sentence:"Voy a ___ (reservar) el hotel esta tarde.",blank:"reservar",options:["reservo","reservé","reservar","reserve"],correct:2,tense:"Structures: ir a",explanation:"Ir a + INFINITIVE = going to do. voy a reservar = I'm going to book."},
+  {sentence:"Suelo ___ (levantarme) a las seis los días de semana.",blank:"levantarme",options:["levanto","levanté","levantarme","levante"],correct:2,tense:"Structures: soler",explanation:"Soler + INFINITIVE = to usually do. suelo levantarme = I usually get up."},
+];
+
+// ── Build tense pills ─────────────────────────────────────────────────────────
 function buildTensePills() {
   const row = document.getElementById('tensePills');
   row.innerHTML = '';
   Object.keys(TENSES).forEach(t => {
     const p = document.createElement('div');
     p.className = 'pill' + (t === currentTense ? ' active' : '');
+    // Flag structural special cases
+    const data = TENSES[t];
     p.textContent = t;
-    p.onclick = () => { currentTense = t; buildTensePills(); renderTenseLearn(); if (tenseMode === 'practice') loadPractVerb(); };
+    p.onclick = () => {
+      currentTense = t;
+      buildTensePills();
+      renderTenseLearn();
+      if (tenseMode === 'practice') { resetVerbPool(); loadPractVerb(); }
+    };
     row.appendChild(p);
   });
 }
 
+// ── Learn mode ────────────────────────────────────────────────────────────────
 function renderTenseLearn() {
   const t = TENSES[currentTense];
-  document.getElementById('tensePatternBox').innerHTML = `<strong>Pattern & when to use</strong>${t.description}<br><br><em>${t.example}</em><br><br><code style="font-size:12px;white-space:pre-wrap;opacity:0.9">${t.pattern}</code>`;
+  const pronouns = LATAM_PRONOUNS;
+
+  // Pattern box
+  let patternHtml = `<strong>${currentTense}</strong><br><br>${t.description}<br><br><em>${t.example}</em><br><br>`;
+  patternHtml += `<code style="font-size:12px;white-space:pre-wrap;opacity:0.9">${t.pattern}</code>`;
+  if (t.irregularNote) {
+    patternHtml += `<br><br><strong style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Irregular notes</strong><br><span style="font-size:12px;">${t.irregularNote}</span>`;
+  }
+  document.getElementById('tensePatternBox').innerHTML = patternHtml;
+
+  // Conjugation table
   const verbs = t.verbs;
-  const pronouns = ['yo','tú','él','nosotros','vosotros','ellos'];
-  let html = `<thead><tr><th>Infinitive</th>${pronouns.map(p=>`<th>${p}</th>`).join('')}</tr></thead><tbody>`;
+  const mapPronouns = ['yo','tú','él','nosotros','ustedes'];
+  const displayPronouns = ['yo','tú','él/ella','nosotros','ustedes'];
+
+  let tableHtml = `<thead><tr>
+    <th>Verb</th>
+    ${displayPronouns.map(p => `<th>${p}</th>`).join('')}
+  </tr></thead><tbody>`;
+
   verbs.forEach(v => {
-    html += `<tr><td><strong>${v.inf}</strong><br><span style="font-size:11px;color:var(--text-muted)">${v.en}</span></td>`;
-    pronouns.forEach(p => { html += `<td class="sp">${v.conj[p]||'-'}</td>`; });
-    html += '</tr>';
+    const isIrr = v.irregular;
+    tableHtml += `<tr>
+      <td>
+        <strong>${v.inf}</strong><br>
+        <span style="font-size:11px;color:var(--text-muted)">${v.en}</span>
+        ${isIrr ? '<br><span style="font-size:10px;color:var(--terracotta);font-weight:600;">IRREGULAR</span>' : ''}
+        ${v.note ? `<br><span style="font-size:10px;color:var(--gold-dark);font-style:italic;">${v.note}</span>` : ''}
+      </td>`;
+    mapPronouns.forEach(pr => {
+      const form = v.conj[pr] || v.conj[pr.split('/')[0]] || '—';
+      tableHtml += `<td class="sp${isIrr ? ' irr' : ''}">${form}</td>`;
+    });
+    tableHtml += '</tr>';
   });
-  html += '</tbody>';
-  document.getElementById('tenseRefTable').innerHTML = html;
+  tableHtml += '</tbody>';
+  document.getElementById('tenseRefTable').innerHTML = tableHtml;
 }
 
-document.querySelectorAll('[data-tensemode]').forEach(b => {
-  b.addEventListener('click', () => {
-    tenseMode = b.dataset.tensemode;
-    document.querySelectorAll('[data-tensemode]').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    document.getElementById('tenseLearned').style.display = tenseMode === 'learn' ? 'block' : 'none';
-    document.getElementById('tensePractice').style.display = tenseMode === 'practice' ? 'block' : 'none';
-    if (tenseMode === 'practice') { conjShuffled = shuffle([...TENSES[currentTense].verbs]); practVerbIndex = 0; loadPractVerb(); }
+// ── Conjugate mode ────────────────────────────────────────────────────────────
+function setVerbFilter(filter) {
+  verbFilter = filter;
+  document.querySelectorAll('[data-verbfilter]').forEach(b => {
+    b.classList.toggle('active', b.dataset.verbfilter === filter);
   });
-});
+  resetVerbPool();
+  loadPractVerb();
+}
+
+function resetVerbPool() {
+  const t = TENSES[currentTense];
+  const all = t.verbs || [];
+  let pool = all;
+  if (verbFilter === 'irregular') pool = all.filter(v => v.irregular);
+  if (verbFilter === 'regular')   pool = all.filter(v => v.regular && !v.irregular);
+  if (!pool.length) pool = all; // fallback
+  conjShuffledFiltered = shuffle([...pool]);
+  practVerbIndex = 0;
+  const el = document.getElementById('practVerbCount');
+  if (el) el.textContent = `${pool.length} verb${pool.length!==1?'s':''}`;
+}
 
 function loadPractVerb() {
   const t = TENSES[currentTense];
-  if (!conjShuffled.length) conjShuffled = shuffle([...t.verbs]);
-  const verb = conjShuffled[practVerbIndex % conjShuffled.length];
+  if (!conjShuffledFiltered.length) resetVerbPool();
+  const verb = conjShuffledFiltered[practVerbIndex % conjShuffledFiltered.length];
   document.getElementById('practTenseName').textContent = currentTense;
   document.getElementById('practVerb').textContent = verb.inf;
   document.getElementById('practMeaning').textContent = verb.en;
+  // Show irregular note if present
+  const noteEl = document.getElementById('practIrregNote');
+  if (noteEl) noteEl.textContent = verb.note || (verb.irregular ? '⚠ Irregular verb' : '');
   document.getElementById('conjFeedback').textContent = '';
   document.getElementById('conjFeedback').className = 'feedback-msg';
-  const pronouns = ['yo','tú','él','nosotros','vosotros','ellos'];
+
+  const pronounKeys  = ['yo','tú','él','nosotros','ustedes'];
+  const pronounLabel = ['yo','tú','él / ella','nosotros / nosotras','ustedes'];
   const grid = document.getElementById('conjGrid');
   grid.innerHTML = '';
-  pronouns.forEach(pr => {
+  pronounKeys.forEach((pr, i) => {
     const cell = document.createElement('div');
     cell.className = 'conj-cell';
     cell.dataset.pronoun = pr;
-    cell.innerHTML = `<span class="conj-pronoun">${pr}</span><input class="conj-input" data-pr="${pr}" placeholder="..." autocomplete="off" autocorrect="off" spellcheck="false">`;
+    cell.innerHTML = `<span class="conj-pronoun">${pronounLabel[i]}</span><input class="conj-input" data-pr="${pr}" placeholder="..." autocomplete="off" autocorrect="off" spellcheck="false">`;
     grid.appendChild(cell);
   });
   grid.querySelectorAll('.conj-input')[0].focus();
   grid.querySelectorAll('.conj-input').forEach(inp => {
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); const inputs = [...grid.querySelectorAll('.conj-input')]; const i = inputs.indexOf(e.target); if (i < inputs.length-1) inputs[i+1].focus(); else checkConj(); } });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const inputs = [...grid.querySelectorAll('.conj-input')];
+        const i = inputs.indexOf(e.target);
+        if (i < inputs.length - 1) inputs[i+1].focus();
+        else checkConj();
+      }
+    });
   });
 }
 
 function checkConj() {
-  const t = TENSES[currentTense];
-  const verb = conjShuffled[practVerbIndex % conjShuffled.length];
+  const verb = conjShuffledFiltered[practVerbIndex % conjShuffledFiltered.length];
   let allCorrect = true;
   document.querySelectorAll('.conj-input').forEach(inp => {
     const pr = inp.dataset.pr;
     const correct = verb.conj[pr] || '';
     const val = inp.value.trim();
-    const ok = val.toLowerCase() === correct.toLowerCase() || similar(val, correct);
+    const ok = val.length > 0 && (val.toLowerCase() === correct.toLowerCase() || similar(val, correct));
     inp.closest('.conj-cell').classList.toggle('correct', ok && val.length > 0);
     inp.closest('.conj-cell').classList.toggle('wrong', !ok && val.length > 0);
     if (!ok) allCorrect = false;
   });
   const fb = document.getElementById('conjFeedback');
   if (allCorrect) {
-    fb.textContent = '✓ Perfect! Moving to next verb…';
+    fb.textContent = '✓ Perfect!';
     fb.className = 'feedback-msg correct';
     bumpStreak();
-    setTimeout(nextTenseVerb, 1000);
+    setTimeout(nextTenseVerb, 900);
   } else {
-    fb.textContent = '✗ Some are wrong — check highlighted fields';
+    fb.textContent = '✗ Check highlighted cells — then Reveal if stuck';
     fb.className = 'feedback-msg wrong';
   }
 }
 
 function revealConj() {
-  const t = TENSES[currentTense];
-  const verb = conjShuffled[practVerbIndex % conjShuffled.length];
+  const verb = conjShuffledFiltered[practVerbIndex % conjShuffledFiltered.length];
+  const pronounKeys = ['yo','tú','él','nosotros','ustedes'];
   document.querySelectorAll('.conj-input').forEach(inp => {
     const pr = inp.dataset.pr;
     inp.value = verb.conj[pr] || '';
     inp.closest('.conj-cell').className = 'conj-cell revealed';
   });
-  document.getElementById('conjFeedback').textContent = 'Revealed — study the pattern then try the next verb';
+  document.getElementById('conjFeedback').textContent = 'Revealed — study, then move to next verb';
   document.getElementById('conjFeedback').className = 'feedback-msg';
 }
 
 function nextTenseVerb() { practVerbIndex++; loadPractVerb(); }
 
+// ── Choose mode ───────────────────────────────────────────────────────────────
+let chooseShuffled = [];
+
+function initChooseMode() {
+  chooseShuffled = shuffle([...CHOOSE_QUESTIONS]);
+  chooseQIndex = 0;
+  chooseScore = 0;
+  chooseTotal = 0;
+  updateChooseScore();
+  loadChooseQ();
+}
+
+function loadChooseQ() {
+  if (chooseQIndex >= chooseShuffled.length) {
+    chooseQIndex = 0;
+    chooseShuffled = shuffle([...CHOOSE_QUESTIONS]);
+  }
+  const q = chooseShuffled[chooseQIndex];
+  chooseAnswered = false;
+
+  document.getElementById('chooseContext').textContent = `Tense: ${q.tense}`;
+  document.getElementById('chooseSentence').innerHTML = q.sentence.replace(
+    /___[^.]*?\./g,
+    m => `<span style="color:var(--terracotta);font-weight:700;border-bottom:2px dashed var(--terracotta)">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>.`
+  ).replace(/___[^,]*/g,
+    m => `<span style="color:var(--terracotta);font-weight:700;border-bottom:2px dashed var(--terracotta)">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>`
+  );
+  document.getElementById('chooseEnglish').textContent = '';
+  document.getElementById('chooseFeedback').textContent = '';
+  document.getElementById('chooseFeedback').className = 'feedback-msg';
+  document.getElementById('chooseExplanation').style.display = 'none';
+  document.getElementById('chooseNextBtn').style.display = 'none';
+
+  const opts = document.getElementById('chooseOptions');
+  opts.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-btn';
+    btn.style.cssText = 'width:100%;text-align:left;padding:10px 14px;font-size:14px;';
+    btn.textContent = opt;
+    btn.onclick = () => answerChooseQ(i, q);
+    opts.appendChild(btn);
+  });
+}
+
+function answerChooseQ(chosen, q) {
+  if (chooseAnswered) return;
+  chooseAnswered = true;
+  chooseTotal++;
+  const correct = chosen === q.correct;
+  if (correct) { chooseScore++; bumpStreak(); }
+
+  // Colour the buttons
+  document.querySelectorAll('#chooseOptions button').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) {
+      btn.style.background = 'var(--success-bg)';
+      btn.style.color = 'var(--success)';
+      btn.style.borderColor = 'var(--success)';
+    } else if (i === chosen && !correct) {
+      btn.style.background = 'var(--error-bg)';
+      btn.style.color = 'var(--error)';
+      btn.style.borderColor = 'var(--error)';
+    }
+  });
+
+  // Show answer in sentence
+  const sentEl = document.getElementById('chooseSentence');
+  sentEl.innerHTML = q.sentence.replace(/___[^.,]*/g, `<span style="color:var(--success);font-weight:700;">${q.blank}</span>`);
+
+  // Feedback
+  const fb = document.getElementById('chooseFeedback');
+  fb.textContent = correct ? '✓ Correct!' : `✗ The answer is "${q.blank}"`;
+  fb.className = correct ? 'feedback-msg correct' : 'feedback-msg wrong';
+
+  // Explanation
+  const expEl = document.getElementById('chooseExplanation');
+  expEl.textContent = q.explanation;
+  expEl.style.display = 'block';
+
+  document.getElementById('chooseNextBtn').style.display = 'inline-block';
+  updateChooseScore();
+}
+
+function nextChooseQ() {
+  chooseQIndex++;
+  loadChooseQ();
+}
+
+function updateChooseScore() {
+  const el = document.getElementById('chooseScore');
+  if (el && chooseTotal > 0) {
+    const pct = Math.round(chooseScore / chooseTotal * 100);
+    el.textContent = `Score: ${chooseScore} / ${chooseTotal} (${pct}%)`;
+  } else if (el) {
+    el.textContent = 'Choose the correct tense for each sentence';
+  }
+}
+
+// ── Mode switching ────────────────────────────────────────────────────────────
+document.querySelectorAll('[data-tensemode]').forEach(b => {
+  b.addEventListener('click', () => {
+    tenseMode = b.dataset.tensemode;
+    document.querySelectorAll('[data-tensemode]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tensePills').style.display   = tenseMode !== 'choose' ? 'flex' : 'none';
+    document.getElementById('tenseLearned').style.display  = tenseMode === 'learn'    ? 'block' : 'none';
+    document.getElementById('tensePractice').style.display = tenseMode === 'practice' ? 'block' : 'none';
+    document.getElementById('tenseChoose').style.display   = tenseMode === 'choose'   ? 'block' : 'none';
+    if (tenseMode === 'practice') { resetVerbPool(); loadPractVerb(); }
+    if (tenseMode === 'choose')   { initChooseMode(); }
+  });
+});
+
 /* ══ SPEAK ══ */
 
-// ── State ────────────────────────────────────────────────────────────────
-let speakCat = Object.keys(SPEAK_PHRASES)[0];
-let speakDeck = [];
-let speakIndex = 0;
-let listenIndex = 0;
-let speakRate = 0.85;
+// ── State ────────────────────────────────────────────────────────────────────
+let speakCat      = Object.keys(SPEAK_PHRASES)[0];
+let speakDeck     = [];
+let speakIndex    = 0;
+let listenIndex   = 0;
+let speakRate     = 0.85;
 let selectedVoice = null;
-let autoAdvance = false;
+let autoAdvance   = false;
 let autoAdvanceTimer = null;
-let speakMode = 'speak'; // 'speak' or 'listen'
+let speakMode     = 'shadow'; // 'shadow' | 'listen' | 'dictation'
 let showSyllables = false;
-let isListening = false;
-let recognition = null;
 let listenRevealed = false;
 
-// ── Voice loading ─────────────────────────────────────────────────────────
+// Dictation state
+let dictSource    = 'phrases'; // 'phrases' | 'vocab' | 'mixed'
+let dictDifficulty = 'normal'; // 'normal' | 'hard'
+let dictDeck      = [];
+let dictIndex     = 0;
+let dictCorrect   = 0;
+let dictWrong     = 0;
+let dictRevealed  = false;
+
+// ── Voice loading ─────────────────────────────────────────────────────────────
 function loadVoices() {
   const voices = speechSynthesis.getVoices();
   if (!voices.length) return;
-
   const sel = document.getElementById('voiceSelect');
   sel.innerHTML = '';
-
-  // Rank preference: LatAm > US > any Spanish
   const ranked = [
     ...voices.filter(v => ['es-MX','es-419','es-US','es-CO','es-AR','es-PE','es-CL'].includes(v.lang)),
     ...voices.filter(v => v.lang.startsWith('es-') && !['es-MX','es-419','es-US','es-CO','es-AR','es-PE','es-CL'].includes(v.lang)),
     ...voices.filter(v => !v.lang.startsWith('es-') && v.lang.startsWith('es'))
   ];
-
-  // Remove duplicates
   const seen = new Set();
   const unique = ranked.filter(v => {
     const key = v.name + v.lang;
     if (seen.has(key)) return false;
     seen.add(key); return true;
   });
-
   if (!unique.length) {
-    // No Spanish voices found — add a note
     const opt = document.createElement('option');
-    opt.textContent = 'No Spanish voices found — install via OS settings';
+    opt.textContent = 'No Spanish voices — install via OS Language Settings';
     opt.disabled = true;
     sel.appendChild(opt);
     return;
   }
-
   unique.forEach((v, i) => {
     const opt = document.createElement('option');
     const region = v.lang.includes('-') ? v.lang.split('-')[1] : v.lang;
-    const label = v.lang.startsWith('es-') ? `${v.name} (${region})` : v.name;
     opt.value = i;
-    opt.textContent = label;
-    opt.dataset.idx = i;
+    opt.textContent = v.lang.startsWith('es-') ? `${v.name} (${region})` : v.name;
     sel.appendChild(opt);
   });
-
-  // Store ranked list globally
   sel._voices = unique;
   selectedVoice = unique[0];
 }
-
 speechSynthesis.onvoiceschanged = loadVoices;
-// Trigger immediately for browsers that have voices synchronously
 setTimeout(loadVoices, 100);
 
 function onVoiceChange() {
   const sel = document.getElementById('voiceSelect');
-  if (sel._voices) {
-    selectedVoice = sel._voices[parseInt(sel.value)] || null;
-  }
+  if (sel._voices) selectedVoice = sel._voices[parseInt(sel.value)] || null;
 }
 
-// ── TTS core ──────────────────────────────────────────────────────────────
+// ── TTS core ──────────────────────────────────────────────────────────────────
 function speak(text, rate, onEnd) {
   speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
@@ -1821,26 +2658,41 @@ function setSpeed(rate) {
   });
 }
 
-// ── Mode switching ────────────────────────────────────────────────────────
+function toggleAutoAdvance() {
+  autoAdvance = !autoAdvance;
+  const tog  = document.getElementById('autoAdvanceToggle');
+  const knob = document.getElementById('autoAdvanceKnob');
+  tog.style.background  = autoAdvance ? 'var(--terracotta)' : 'var(--border)';
+  knob.style.left       = autoAdvance ? '18px' : '2px';
+  if (!autoAdvance) clearAutoAdvance();
+}
+function clearAutoAdvance() {
+  if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+}
+function scheduleAutoAdvance(nextFn, playFn) {
+  clearAutoAdvance();
+  autoAdvanceTimer = setTimeout(() => { nextFn(); setTimeout(playFn, 500); }, 1800);
+}
+
+// ── Mode switching ────────────────────────────────────────────────────────────
 function setSpeakMode(mode) {
   speakMode = mode;
   document.querySelectorAll('[data-speakmode]').forEach(b => {
     b.classList.toggle('active', b.dataset.speakmode === mode);
   });
-  document.getElementById('speakModePanel').style.display = mode === 'speak' ? 'block' : 'none';
-  document.getElementById('listenModePanel').style.display = mode === 'listen' ? 'block' : 'none';
+  document.getElementById('shadowModePanel').style.display    = mode === 'shadow'    ? 'block' : 'none';
+  document.getElementById('listenModePanel').style.display    = mode === 'listen'    ? 'block' : 'none';
+  document.getElementById('dictationModePanel').style.display = mode === 'dictation' ? 'block' : 'none';
+  // Category pills only relevant for shadow/listen
+  document.getElementById('speakCatPills').style.display = mode === 'dictation' ? 'none' : '';
   speechSynthesis.cancel();
   clearAutoAdvance();
-  if (mode === 'listen') {
-    loadListenPhrase();
-    // Auto-play in listen mode
-    setTimeout(() => playListenPhrase(), 400);
-  } else {
-    loadSpeakPhrase();
-  }
+  if (mode === 'shadow')    { loadSpeakPhrase(); }
+  if (mode === 'listen')    { loadListenPhrase(); setTimeout(playListenPhrase, 400); }
+  if (mode === 'dictation') { buildDictDeck(); loadDictPhrase(); }
 }
 
-// ── Category pills ────────────────────────────────────────────────────────
+// ── Category pills ────────────────────────────────────────────────────────────
 function buildSpeakCatPills() {
   const row = document.getElementById('speakCatPills');
   row.innerHTML = '';
@@ -1849,11 +2701,8 @@ function buildSpeakCatPills() {
     p.className = 'pill' + (cat === speakCat ? ' active' : '');
     p.textContent = cat;
     p.onclick = () => {
-      speakCat = cat;
-      speakIndex = 0;
-      listenIndex = 0;
-      buildSpeakCatPills();
-      buildSpeakDeck();
+      speakCat = cat; speakIndex = 0; listenIndex = 0;
+      buildSpeakCatPills(); buildSpeakDeck();
       if (speakMode === 'listen') { loadListenPhrase(); setTimeout(playListenPhrase, 400); }
       else loadSpeakPhrase();
     };
@@ -1867,93 +2716,44 @@ function buildSpeakDeck() {
 
 function shuffleSpeakDeck() {
   speakDeck = shuffle([...(SPEAK_PHRASES[speakCat] || [])]);
-  speakIndex = 0;
-  listenIndex = 0;
+  speakIndex = 0; listenIndex = 0;
   if (speakMode === 'listen') { loadListenPhrase(); setTimeout(playListenPhrase, 300); }
   else loadSpeakPhrase();
 }
 
-// ── Speak mode: load phrase ───────────────────────────────────────────────
+// ── Shadow mode ───────────────────────────────────────────────────────────────
 function loadSpeakPhrase() {
   if (!speakDeck.length) buildSpeakDeck();
+  if (!speakDeck.length) return;
   const ph = speakDeck[speakIndex % speakDeck.length];
-
-  document.getElementById('speakPhrase').textContent = ph.es;
+  document.getElementById('speakPhrase').textContent      = ph.es;
   document.getElementById('speakTranslation').textContent = ph.en;
-  document.getElementById('speakPhonetic').textContent = ph.phonetic ? '📢 ' + ph.phonetic : '';
-  document.getElementById('speakNotes').textContent = ph.notes || '';
-  document.getElementById('speakCounter').textContent = `Phrase ${(speakIndex % speakDeck.length) + 1} of ${speakDeck.length}`;
-
-  // Reset syllables
+  document.getElementById('speakPhonetic').textContent    = ph.phonetic ? '📢 ' + ph.phonetic : '';
+  document.getElementById('speakNotes').textContent       = ph.notes || '';
+  document.getElementById('speakCounter').textContent     = `Phrase ${(speakIndex % speakDeck.length)+1} of ${speakDeck.length}`;
   showSyllables = false;
   document.getElementById('syllableBreakdown').style.display = 'none';
   document.getElementById('syllableBtn').textContent = 'Show syllable breakdown';
-
-  // Reset mic
-  document.getElementById('heardText').textContent = '';
-  document.getElementById('speakFeedback').textContent = '';
-  document.getElementById('speakFeedback').className = 'feedback-msg';
-  if (document.getElementById('micStatus'))
-    document.getElementById('micStatus').textContent = 'Tap mic to record';
-
   clearAutoAdvance();
 }
 
 function playSpeakPhrase(repeat) {
   const phrase = document.getElementById('speakPhrase').textContent;
   if (repeat) {
-    // Play 3 times with short pause
-    speak(phrase, speakRate, () => {
-      setTimeout(() => speak(phrase, speakRate, () => {
-        setTimeout(() => speak(phrase, speakRate), 600);
-      }), 600);
-    });
+    speak(phrase, speakRate, () => setTimeout(() =>
+      speak(phrase, speakRate, () => setTimeout(() =>
+        speak(phrase, speakRate), 600)), 600));
   } else {
     speak(phrase, speakRate, () => {
-      if (autoAdvance) scheduleAutoAdvance();
+      if (autoAdvance) scheduleAutoAdvance(nextSpeak, playSpeakPhrase);
     });
   }
 }
 
-function scheduleAutoAdvance() {
-  clearAutoAdvance();
-  autoAdvanceTimer = setTimeout(() => {
-    nextSpeak();
-    setTimeout(() => playSpeakPhrase(), 500);
-  }, 1800);
-}
+function nextSpeak() { speakIndex++; loadSpeakPhrase(); speechSynthesis.cancel(); }
+function prevSpeak() { speakIndex = Math.max(0, speakIndex-1); loadSpeakPhrase(); speechSynthesis.cancel(); }
 
-function clearAutoAdvance() {
-  if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
-}
-
-function toggleAutoAdvance() {
-  autoAdvance = !autoAdvance;
-  const tog = document.getElementById('autoAdvanceToggle');
-  const knob = document.getElementById('autoAdvanceKnob');
-  if (autoAdvance) {
-    tog.style.background = 'var(--terracotta)';
-    knob.style.left = '18px';
-  } else {
-    tog.style.background = 'var(--border)';
-    knob.style.left = '2px';
-    clearAutoAdvance();
-  }
-}
-
-function nextSpeak() {
-  speakIndex++;
-  loadSpeakPhrase();
-  speechSynthesis.cancel();
-}
-
-function prevSpeak() {
-  speakIndex = Math.max(0, speakIndex - 1);
-  loadSpeakPhrase();
-  speechSynthesis.cancel();
-}
-
-// ── Syllable breakdown ────────────────────────────────────────────────────
+// ── Syllable breakdown ────────────────────────────────────────────────────────
 function toggleSyllables() {
   showSyllables = !showSyllables;
   const box = document.getElementById('syllableBreakdown');
@@ -1970,22 +2770,17 @@ function toggleSyllables() {
 }
 
 function buildSyllableBreakdown(text) {
-  // Simple Spanish syllabification rules:
-  // Consonant clusters, diphthongs, stressed vowels (with accent marks)
-  // We highlight stressed syllables based on accent marks + default stress rules
   const words = text.replace(/[¿¡.,;:!?]/g, '').split(/\s+/);
   return words.map(word => {
     const syllables = syllabify(word);
-    const stressed = getStressIndex(syllables, word);
-    return syllables.map((s, i) => {
-      const isStress = i === stressed;
-      return `<span style="${isStress ? 'font-weight:700;font-size:16px;color:var(--terracotta)' : 'font-size:15px;opacity:0.75'}">${s}</span>`;
-    }).join('<span style="opacity:0.4;">·</span>');
+    const stressed  = getStressIndex(syllables, word);
+    return syllables.map((s, i) =>
+      `<span style="${i===stressed?'font-weight:700;font-size:16px;color:var(--terracotta)':'font-size:15px;opacity:0.75'}">${s}</span>`
+    ).join('<span style="opacity:0.4;">·</span>');
   }).join('&nbsp;&nbsp;');
 }
 
 function syllabify(word) {
-  // Basic Spanish syllabification (handles most common cases)
   const w = word.toLowerCase();
   const vowels = 'aeiouáéíóúü';
   const syllables = [];
@@ -1993,22 +2788,13 @@ function syllabify(word) {
   let i = 0;
   while (i < w.length) {
     current += w[i];
-    const isVowel = vowels.includes(w[i]);
-    const nextIsVowel = i+1 < w.length && vowels.includes(w[i+1]);
-    const nextNextIsVowel = i+2 < w.length && vowels.includes(w[i+2]);
-    if (isVowel) {
-      // Check for diphthong (weak vowel + strong, or weak + weak)
-      const weakVowels = 'iuíú';
-      if (nextIsVowel && (weakVowels.includes(w[i]) || weakVowels.includes(w[i+1]))) {
-        // Keep diphthong together
-        current += w[i+1]; i++;
-      }
-      // After vowel: split before next consonant cluster
+    const isV = vowels.includes(w[i]);
+    const nV  = i+1 < w.length && vowels.includes(w[i+1]);
+    if (isV) {
+      const weak = 'iuíú';
+      if (nV && (weak.includes(w[i]) || weak.includes(w[i+1]))) { current += w[i+1]; i++; }
       if (i+1 < w.length && !vowels.includes(w[i+1])) {
-        if (i+2 < w.length && !vowels.includes(w[i+2]) && i+3 < w.length && vowels.includes(w[i+3])) {
-          // Two consonants before vowel: split between them
-          current += w[i+1]; i++;
-        }
+        if (i+2 < w.length && !vowels.includes(w[i+2]) && i+3 < w.length && vowels.includes(w[i+3])) { current += w[i+1]; i++; }
         syllables.push(current); current = '';
       }
     }
@@ -2019,26 +2805,23 @@ function syllabify(word) {
 }
 
 function getStressIndex(syllables, word) {
-  // Rule: if accent mark present, that syllable. Otherwise:
-  // words ending in vowel/n/s: penultimate. Others: last.
   for (let i = 0; i < syllables.length; i++) {
     if (/[áéíóú]/.test(syllables[i])) return i;
   }
   const last = word.slice(-1).toLowerCase();
-  const penultimate = 'aoeiuns'.includes(last);
-  return penultimate ? Math.max(0, syllables.length - 2) : syllables.length - 1;
+  return 'aoeiuns'.includes(last) ? Math.max(0, syllables.length-2) : syllables.length-1;
 }
 
-// ── Listen mode ───────────────────────────────────────────────────────────
+// ── Listen mode ───────────────────────────────────────────────────────────────
 function loadListenPhrase() {
   if (!speakDeck.length) buildSpeakDeck();
+  if (!speakDeck.length) return;
   const ph = speakDeck[listenIndex % speakDeck.length];
   document.getElementById('listenPhrase').textContent = ph.es;
-  document.getElementById('listenCounter').textContent = `Phrase ${(listenIndex % speakDeck.length) + 1} of ${speakDeck.length}`;
-  // Reset translation to hidden
+  document.getElementById('listenCounter').textContent = `Phrase ${(listenIndex % speakDeck.length)+1} of ${speakDeck.length}`;
   const trans = document.getElementById('listenTranslation');
-  trans.textContent = ph.en;
-  trans.className = 'hidden-translation';
+  trans.textContent  = ph.en;
+  trans.className    = 'hidden-translation';
   trans.style.opacity = '0';
   document.getElementById('listenNotes').textContent = ph.notes || '';
   listenRevealed = false;
@@ -2054,11 +2837,11 @@ function revealListenTranslation() {
 
 function playListenPhrase() {
   if (!speakDeck.length) buildSpeakDeck();
+  if (!speakDeck.length) return;
   const ph = speakDeck[listenIndex % speakDeck.length];
   speak(ph.es, speakRate, () => {
     if (autoAdvance) {
       autoAdvanceTimer = setTimeout(() => {
-        // Auto-reveal, then advance
         revealListenTranslation();
         setTimeout(() => { nextListen(); setTimeout(playListenPhrase, 600); }, 1800);
       }, 600);
@@ -2072,67 +2855,190 @@ function nextListen() {
   speechSynthesis.cancel();
   if (speakMode === 'listen') setTimeout(playListenPhrase, 400);
 }
-
 function prevListen() {
-  listenIndex = Math.max(0, listenIndex - 1);
+  listenIndex = Math.max(0, listenIndex-1);
   loadListenPhrase();
   speechSynthesis.cancel();
 }
 
-// ── Mic (optional — graceful degradation) ────────────────────────────────
-function initMicSupport() {
-  const hasSR = ('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window);
-  document.getElementById('micSection').style.display = hasSR ? 'block' : 'none';
-  document.getElementById('noMicNote').style.display = hasSR ? 'none' : 'block';
+// ── Dictation mode ────────────────────────────────────────────────────────────
+function setDictSource(src) {
+  dictSource = src;
+  document.querySelectorAll('[data-dictsrc]').forEach(b => {
+    b.classList.toggle('active', b.dataset.dictsrc === src);
+  });
+  buildDictDeck();
+  loadDictPhrase();
 }
 
-function toggleMic() {
-  if (isListening) { recognition && recognition.stop(); return; }
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
-  recognition = new SR();
-  recognition.lang = selectedVoice ? selectedVoice.lang : 'es-MX';
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 3;
-  recognition.start();
-  isListening = true;
-  document.getElementById('micBtn').classList.add('listening');
-  document.getElementById('micStatus').textContent = 'Listening…';
+function setDictDifficulty(diff) {
+  dictDifficulty = diff;
+  document.querySelectorAll('[data-dictdiff]').forEach(b => {
+    b.classList.toggle('active', b.dataset.dictdiff === diff);
+  });
+  loadDictPhrase(); // refresh hint visibility
+}
 
-  recognition.onresult = e => {
-    const results = [...e.results[0]].map(r => r.transcript.toLowerCase());
-    const target = speakDeck[speakIndex % speakDeck.length].es.toLowerCase();
-    const heard = results[0];
-    document.getElementById('heardText').textContent = '"' + heard + '"';
-    const ok = results.some(r => similar(r, target));
-    const fb = document.getElementById('speakFeedback');
-    if (ok) {
-      fb.textContent = '✓ Spot on!';
-      fb.className = 'feedback-msg correct';
-      bumpStreak();
+function buildDictDeck() {
+  let pool = [];
+
+  if (dictSource === 'phrases' || dictSource === 'mixed') {
+    // All speak phrases — flat array with en for hint
+    Object.values(SPEAK_PHRASES).forEach(arr => {
+      arr.forEach(p => pool.push({ es: p.es, en: p.en, src: 'phrase' }));
+    });
+  }
+
+  if (dictSource === 'vocab' || dictSource === 'mixed') {
+    // Vocab example sentences — pull es + en from VOCAB
+    Object.entries(VOCAB).forEach(([cat, words]) => {
+      words.forEach(w => {
+        if (w.ex && w.ex.length >= 8) {
+          pool.push({
+            es: w.ex,
+            en: w.en,           // word meaning as hint
+            word: w.es,         // the vocabulary word itself
+            src: 'vocab'
+          });
+        }
+      });
+    });
+  }
+
+  // Filter by level if one is set (vocab sentences inherit their word's level)
+  // Keep all phrase entries; filter vocab entries if level selected
+  if (currentLevel && currentLevel !== 'All') {
+    pool = pool.filter(p => {
+      if (p.src === 'phrase') return true; // phrases have no level
+      // Find the word's level by looking it up
+      const wordEntry = p.word ? Object.values(VOCAB).flat().find(w => w.es === p.word) : null;
+      return wordEntry ? wordEntry.level === currentLevel : true;
+    });
+  }
+
+  dictDeck = shuffle(pool);
+  dictIndex = 0;
+  dictCorrect = 0;
+  dictWrong = 0;
+  updateDictScore();
+
+  const el = document.getElementById('dictCounter');
+  if (el) el.textContent = `${dictDeck.length} sentences`;
+}
+
+function shuffleDictDeck() {
+  dictDeck = shuffle([...dictDeck]);
+  dictIndex = 0;
+  dictRevealed = false;
+  loadDictPhrase();
+}
+
+function loadDictPhrase() {
+  if (!dictDeck.length) buildDictDeck();
+  if (!dictDeck.length) return;
+
+  // Reshuffle on loop
+  if (dictIndex >= dictDeck.length) {
+    dictIndex = 0;
+    dictDeck = shuffle([...dictDeck]);
+  }
+
+  const ph = dictDeck[dictIndex];
+  dictRevealed = false;
+
+  // Translation hint (hidden in hard mode)
+  const hintEl = document.getElementById('dictTranslationHint');
+  if (dictDifficulty === 'hard') {
+    hintEl.textContent = '';
+  } else {
+    // Normal: show English meaning as a hint
+    if (ph.src === 'vocab' && ph.word) {
+      hintEl.innerHTML = `<span style="opacity:0.6;">Word: </span><strong>${ph.word}</strong> <span style="opacity:0.6;">= ${ph.en}</span>`;
     } else {
-      const score = levenshteinScore(heard, target);
-      if (score > 0.7) { fb.textContent = '~ Very close — good effort'; fb.className = 'feedback-msg'; }
-      else if (score > 0.45) { fb.textContent = '✗ Not quite — listen again first'; fb.className = 'feedback-msg wrong'; }
-      else { fb.textContent = '✗ Try again — use Slow speed to hear each syllable'; fb.className = 'feedback-msg wrong'; }
+      hintEl.innerHTML = `<span style="opacity:0.6;">${ph.en}</span>`;
     }
-  };
-  recognition.onerror = e => {
-    document.getElementById('micStatus').textContent = e.error === 'no-speech' ? 'No speech detected — try again' : 'Mic error: ' + e.error;
-  };
-  recognition.onend = () => {
-    isListening = false;
-    document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('micStatus').textContent = 'Tap mic to try again';
-  };
+  }
+
+  // Reset UI
+  const input = document.getElementById('dictInput');
+  input.value = '';
+  input.className = 'rapid-input';
+  document.getElementById('dictFeedback').textContent = '';
+  document.getElementById('dictFeedback').className = 'feedback-msg';
+  document.getElementById('dictAnswer').style.display = 'none';
+  document.getElementById('dictNextBtn').style.display = 'none';
+
+  // Auto-play
+  setTimeout(() => playDictPhrase(), 300);
 }
 
-// Ensure voices loaded on iOS (requires user gesture first time)
-document.addEventListener('click', () => {
-  if (!speechSynthesis.getVoices().length) return;
-  loadVoices();
-}, { once: true });
+function playDictPhrase(slow) {
+  if (!dictDeck.length) return;
+  const ph = dictDeck[dictIndex % dictDeck.length];
+  speak(ph.es, slow ? 0.55 : speakRate);
+}
 
+function checkDictation() {
+  if (dictRevealed) { nextDictation(); return; }
+  const input = document.getElementById('dictInput');
+  const val   = input.value.trim();
+  if (!val) return;
+
+  const ph      = dictDeck[dictIndex % dictDeck.length];
+  const target  = ph.es;
+
+  // Lenient matching: strip punctuation, normalise accents optionally
+  const normalise = s => s.toLowerCase().replace(/[¿¡.,;:!?«»]/g, '').trim();
+  const ok = similar(normalise(val), normalise(target)) ||
+             normalise(val) === normalise(target);
+
+  const fb = document.getElementById('dictFeedback');
+  input.className = 'rapid-input ' + (ok ? 'correct' : 'wrong');
+
+  // Always show the answer after attempting
+  document.getElementById('dictAnswerText').textContent = target;
+  document.getElementById('dictAnswerTranslation').textContent = ph.en;
+  document.getElementById('dictAnswer').style.display = 'block';
+  document.getElementById('dictNextBtn').style.display = 'inline-block';
+  dictRevealed = true;
+
+  if (ok) {
+    fb.textContent = '✓ Correct!';
+    fb.className = 'feedback-msg correct';
+    dictCorrect++;
+    bumpStreak();
+  } else {
+    fb.textContent = '✗ Not quite — check the answer below';
+    fb.className = 'feedback-msg wrong';
+    dictWrong++;
+  }
+  updateDictScore();
+}
+
+function nextDictation() {
+  dictIndex++;
+  dictRevealed = false;
+  loadDictPhrase();
+}
+
+function skipDictation() {
+  dictWrong++;
+  updateDictScore();
+  nextDictation();
+}
+
+function updateDictScore() {
+  const total = dictCorrect + dictWrong;
+  const pct   = total > 0 ? ` (${Math.round(dictCorrect/total*100)}%)` : '';
+  document.getElementById('dictScore').textContent = `✓ ${dictCorrect}  ✗ ${dictWrong}${pct}`;
+}
+
+// ── Dictation input: Enter to submit ─────────────────────────────────────────
+document.getElementById('dictInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkDictation();
+});
+
+// ── Levenshtein (for dictation lenient matching) ──────────────────────────────
 function levenshteinScore(a, b) {
   const sa = a.replace(/[^a-záéíóúñü]/gi,'').toLowerCase();
   const sb = b.replace(/[^a-záéíóúñü]/gi,'').toLowerCase();
@@ -2142,6 +3048,14 @@ function levenshteinScore(a, b) {
   for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) dp[i][j]=sa[i-1]===sb[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
   return 1 - dp[m][n]/Math.max(m,n);
 }
+
+// ── Init: ensure voices load after first user interaction (iOS) ───────────────
+document.addEventListener('click', () => {
+  if (!speechSynthesis.getVoices().length) return;
+  loadVoices();
+}, { once: true });
+
+
 
 /* ══ PROGRESS ══ */
 function renderProgress() {
@@ -2170,8 +3084,15 @@ function renderProgress() {
     bars.innerHTML += `<div class="mastery-row"><span class="mastery-label">${cat.split(' ')[0]}</span><div class="mastery-bar-wrap"><div class="mastery-bar" style="width:${pct}%"></div></div><span class="mastery-pct">${pct}%</span></div>`;
   });
 
-  const review = Object.entries(progress).filter(([k,v]) => v.seen > 0 && (v.score||0) <= 1).slice(0,20).map(([k]) => k.split('::')[1]);
-  document.getElementById('reviewList').textContent = review.length ? review.join(' · ') : 'None yet — keep practising!';
+  // Build review list cross-category (score <= 2, seen > 0)
+  const reviewEntries = Object.entries(progress)
+    .filter(([k,v]) => v.seen > 0 && (v.score||0) <= 2)
+    .sort((a,b) => (a[1].score||0) - (b[1].score||0)) // worst first
+    .slice(0, 30);
+  const reviewWords = reviewEntries.map(([k]) => k.split('::')[1]);
+  document.getElementById('reviewList').textContent = reviewWords.length
+    ? reviewWords.join(' · ')
+    : 'None yet — keep practising!';
 }
 
 function resetProgress() {
@@ -2199,11 +3120,12 @@ function init() {
   loadDeck();
   buildTensePills();
   renderTenseLearn();
+  resetVerbPool();
   buildSpeakCatPills();
   buildSpeakDeck();
   loadSpeakPhrase();
   loadListenPhrase();
-  initMicSupport();
+  buildDictDeck();
   loadVoices();
   document.getElementById('streakCount').textContent = settings.streak || 0;
 }
