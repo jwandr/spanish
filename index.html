@@ -544,9 +544,11 @@
     -webkit-user-select: none;
   }
   .match-card:hover   { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-  .match-card.selected { border-color: var(--primary); background: var(--primary); color: white; transform: scale(1.03); box-shadow: 0 4px 12px var(--primary-glow); }
+  .match-card.selected { border-color: var(--primary); background: var(--primary); color: white !important; transform: scale(1.03); box-shadow: 0 4px 12px var(--primary-glow); }
   .match-card.es-card  { color: var(--header); }
   .match-card.en-card  { color: var(--text-muted); font-weight: 500; }
+  .match-card.es-card.selected,
+  .match-card.en-card.selected { color: white !important; }
   .match-card.matched  { border-color: var(--teal); background: var(--teal-light); color: var(--teal-dark); cursor: default; opacity: 0.6; transform: scale(0.97); }
   .match-card.wrong    { border-color: var(--error); background: var(--error-bg); animation: shake 0.3s ease; }
   .match-card.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
@@ -652,9 +654,9 @@
   }
 
   /* Ring animation urgency colours */
-  .ring-ok      { stroke: var(--primary) !important; }
-  .ring-warning { stroke: var(--amber) !important; }
-  .ring-danger  { stroke: var(--error) !important; }
+  .ring-ok      { stroke: rgba(91,76,245,0.45) !important; }
+  .ring-warning { stroke: rgba(245,158,11,0.60) !important; }
+  .ring-danger  { stroke: rgba(192,37,58,0.70)  !important; }
 
   /* Word card flash on wrong */
   @keyframes blitzWrongCard {
@@ -1142,6 +1144,7 @@
       <button class="mode-btn active" data-gamemode="lightning" onclick="setGameMode('lightning')">⚡ Lightning</button>
       <button class="mode-btn"        data-gamemode="sprint"    onclick="setGameMode('sprint')">🎯 Sprint</button>
       <button class="mode-btn"        data-gamemode="blitz"     onclick="setGameMode('blitz')">🔥 Blitz</button>
+      <button class="mode-btn"        data-gamemode="ear"       onclick="setGameMode('ear')">🔈 Ear Trainer</button>
     </div>
   </div>
 
@@ -1172,8 +1175,8 @@
 
     <!-- Timer & score bar -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
-      <div style="font-size:22px;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums;" id="lightningTimer">0.0s</div>
-      <div style="font-size:13px;color:var(--text-muted);" id="lightningPairsLeft"></div>
+      <div style="font-size:22px;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums;transition:color 0.3s;" id="lightningTimer">0.0s</div>
+      <div style="font-size:12px;color:var(--text-muted);text-align:center;" id="lightningPairsLeft"></div>
       <div style="font-size:13px;font-weight:600;color:var(--teal);" id="lightningCombo"></div>
     </div>
 
@@ -1193,7 +1196,7 @@
       <div id="lightningResultBest"  style="font-size:12px;color:var(--teal);margin-bottom:1rem;font-weight:600;"></div>
       <div id="lightningSlowWords"   style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;"></div>
       <div style="display:flex;gap:8px;justify-content:center;">
-        <button class="submit-btn" onclick="startLightning()">▶ Play again</button>
+        <button class="submit-btn" onclick="startLightning()">▶ Play again (3 rounds)</button>
         <button class="nav-btn"    onclick="newLightningRound()">New words →</button>
       </div>
     </div>
@@ -1284,9 +1287,9 @@
       <!-- SVG ring — fills the container, pointer-events off -->
       <svg id="blitzRingSvg" width="180" height="180"
            style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;">
-        <circle cx="90" cy="90" r="82" fill="none" stroke="var(--border)" stroke-width="7"/>
+        <circle cx="90" cy="90" r="82" fill="none" stroke="rgba(91,76,245,0.12)" stroke-width="6"/>
         <circle id="blitzRingArc" cx="90" cy="90" r="82" fill="none"
-          stroke="var(--primary)" stroke-width="7"
+          stroke="rgba(91,76,245,0.35)" stroke-width="6"
           stroke-linecap="round"
           stroke-dasharray="515" stroke-dashoffset="0"
           transform="rotate(-90 90 90)"
@@ -1294,8 +1297,8 @@
       </svg>
       <!-- Text floats above the ring, no background -->
       <div style="position:relative;z-index:1;padding:0 1rem;">
-        <div id="blitzWordType" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-hint);margin-bottom:6px;"></div>
-        <div id="blitzWord"     style="font-size:28px;font-weight:800;color:var(--header);letter-spacing:-0.5px;line-height:1.2;">Ready?</div>
+        <div id="blitzWordType" style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:6px;text-shadow:0 0 8px white;"></div>
+        <div id="blitzWord"     style="font-size:28px;font-weight:800;color:var(--header);letter-spacing:-0.5px;line-height:1.2;text-shadow:0 0 12px white,0 0 8px white,0 1px 3px rgba(255,255,255,0.9);">Ready?</div>
         <div id="blitzLevel"    style="font-size:11px;color:var(--text-hint);margin-top:4px;"></div>
       </div>
     </div>
@@ -1328,6 +1331,71 @@
         <div id="blitzRoundSummary" style="display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto;"></div>
       </div>
     </div>
+  </div>
+
+
+  <!-- ── EAR TRAINER MODE ── -->
+  <div id="earPanel" style="display:none;">
+
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;">
+      Listen to the spoken word, then pick its English meaning. No text shown — pure listening comprehension.
+    </div>
+
+    <!-- Tier badge + counter + score -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+      <div id="earTierBadge" style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:99px;background:var(--primary-light);color:var(--primary);">Beginner</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);" id="earQCounter">Q 0 / 20</div>
+      <div style="font-size:12px;font-weight:700;color:var(--teal);" id="earScoreDisplay">0 pts</div>
+    </div>
+
+    <!-- Audio area — ring + speaker, no word shown -->
+    <div style="position:relative;text-align:center;margin-bottom:1rem;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <svg id="earRingSvg" width="180" height="180"
+           style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;">
+        <circle cx="90" cy="90" r="82" fill="none" stroke="var(--border)" stroke-width="7"/>
+        <circle id="earRingArc" cx="90" cy="90" r="82" fill="none"
+          stroke="var(--primary)" stroke-width="7"
+          stroke-linecap="round"
+          stroke-dasharray="515" stroke-dashoffset="0"
+          transform="rotate(-90 90 90)"
+          style="transition:stroke 0.3s;"/>
+      </svg>
+      <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <button id="earPlayBtn" onclick="replayEarWord()"
+          style="width:72px;height:72px;border-radius:50%;background:var(--primary);border:none;cursor:pointer;font-size:30px;color:white;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-md);transition:transform 0.1s,background 0.15s;">
+          🔊
+        </button>
+        <div id="earPlayHint" style="font-size:11px;color:var(--text-hint);">tap to replay</div>
+      </div>
+    </div>
+
+    <!-- Four answer options -->
+    <div id="earOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0.75rem;"></div>
+
+    <!-- Start overlay -->
+    <div id="earStartOverlay" style="text-align:center;margin-top:0.5rem;">
+      <button class="submit-btn" style="padding:12px 32px;font-size:15px;" onclick="startEar()">&#9654; Start</button>
+    </div>
+
+    <!-- Result -->
+    <div id="earResult" style="display:none;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-card);overflow:hidden;">
+      <div style="text-align:center;padding:1.5rem 1.5rem 1rem;">
+        <div id="earResultEmoji"  style="font-size:44px;margin-bottom:8px;">&#128296;</div>
+        <div id="earResultTier"   style="font-size:13px;font-weight:700;margin-bottom:4px;"></div>
+        <div id="earResultScore"  style="font-size:32px;font-weight:800;color:var(--primary);margin-bottom:4px;"></div>
+        <div id="earResultDetail" style="font-size:14px;color:var(--text-muted);margin-bottom:4px;"></div>
+        <div id="earResultBest"   style="font-size:12px;color:var(--teal);margin-bottom:1rem;font-weight:600;"></div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button class="submit-btn" onclick="startEar()">&#9654; Play again</button>
+          <button class="nav-btn"    onclick="newEarRound()">New words &#8594;</button>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding:1rem 1.5rem;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:0.6rem;">Round summary</div>
+        <div id="earRoundSummary" style="display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
   </div>
 
 </section>
@@ -1723,7 +1791,7 @@ document.querySelectorAll('.nav-tab').forEach(t => {
     t.classList.add('active');
     document.getElementById('tab-' + t.dataset.tab).classList.add('active');
     if (t.dataset.tab === 'progress') renderProgress();
-    if (t.dataset.tab === 'game') { gamePool = buildGamePool(60); updateGameBests(); }
+    if (t.dataset.tab === 'game') { stopEar(); gamePool = buildGamePool(60); updateGameBests(); }
   });
 });
 
@@ -3521,6 +3589,9 @@ let lightningStartTime = 0;
 let lightningTimer     = null;
 let lightningTimings   = [];   // ms per pair
 let lightningActive    = false;
+let lightningRound     = 0;    // 0-indexed current round (0,1,2)
+let lightningRoundTimes = [];  // ms per round
+const LIGHTNING_ROUNDS  = 3;
 
 // Sprint state
 let sprintPool     = [];
@@ -3630,9 +3701,11 @@ function setGameMode(mode) {
   document.getElementById('lightningPanel').style.display = mode === 'lightning' ? 'block' : 'none';
   document.getElementById('sprintPanel').style.display    = mode === 'sprint'    ? 'block' : 'none';
   document.getElementById('blitzPanel').style.display     = mode === 'blitz'     ? 'block' : 'none';
+  document.getElementById('earPanel').style.display       = mode === 'ear'       ? 'block' : 'none';
   stopLightning();
   stopSprint();
   stopBlitz();
+  stopEar();
   updateGameBests();
 }
 
@@ -3643,16 +3716,32 @@ function updateGameBests() {
   if (gameBests.lightningBest) parts.push(`⚡ Best: <strong>${(gameBests.lightningBest/1000).toFixed(1)}s</strong>`);
   if (gameBests.sprintBest)    parts.push(`🎯 Best: <strong>${gameBests.sprintBest} pts</strong>`);
   if (gameBests.blitzBest)     parts.push(`🔥 Best: <strong>${gameBests.blitzBest} pts</strong>`);
+  if (gameBests.earBest)       parts.push(`🔈 Best: <strong>${gameBests.earBest} pts</strong>`);
   el.innerHTML = parts.join(' &nbsp;·&nbsp; ');
 }
 
 // ── LIGHTNING MATCH ───────────────────────────────────────────────────────────
 
 function startLightning() {
+  // Full series start — reset rounds
+  lightningRound      = 0;
+  lightningRoundTimes = [];
+  startLightningRound();
+}
+
+function newLightningRound() {
+  gamePool = buildGamePool(60);
+  lightningRound      = 0;
+  lightningRoundTimes = [];
+  startLightningRound();
+}
+
+function startLightningRound() {
   if (!gamePool.length) gamePool = buildGamePool(60);
   const pool = gamePool.length >= 6 ? gamePool : buildGamePool(60);
 
-  // Pick 6 unique pairs
+  // Pick 6 unique pairs — ensure no repeats from previous rounds in same series
+  const used = new Set(lightningRoundTimes.flatMap ? [] : []);
   const picked = shuffle([...pool]).slice(0, 6);
   lightningPairs = picked.map((w, i) => ({
     es: w.es, en: w.en, id: i, _cat: w._cat, matchTime: 0
@@ -3670,20 +3759,26 @@ function startLightning() {
   document.getElementById('lightningCombo').textContent    = '';
   document.getElementById('lightningPairsLeft').textContent = `0 / ${lightningPairs.length} matched`;
 
-  // Start timer
-  lightningStartTime = performance.now();
-  clearInterval(lightningTimer);
-  lightningTimer = setInterval(() => {
-    if (!lightningActive) return;
-    const elapsed = (performance.now() - lightningStartTime) / 1000;
-    document.getElementById('lightningTimer').textContent = elapsed.toFixed(1) + 's';
-  }, 100);
+  // Show round indicator
+  const roundLabel = `Round ${lightningRound + 1} of ${LIGHTNING_ROUNDS}`;
+  const timerEl = document.getElementById('lightningTimer');
+  timerEl.textContent = roundLabel;
+  timerEl.style.fontSize = '14px';
+  setTimeout(() => { timerEl.style.fontSize = '22px'; }, 600);
+
+  // Start timer after brief label display
+  setTimeout(() => {
+    lightningStartTime = performance.now();
+    clearInterval(lightningTimer);
+    lightningTimer = setInterval(() => {
+      if (!lightningActive) return;
+      const elapsed = (performance.now() - lightningStartTime) / 1000;
+      document.getElementById('lightningTimer').textContent = elapsed.toFixed(1) + 's';
+    }, 100);
+  }, 600);
 }
 
-function newLightningRound() {
-  gamePool = buildGamePool(60); // fresh words
-  startLightning();
-}
+
 
 function stopLightning() {
   lightningActive = false;
@@ -3792,37 +3887,63 @@ function onMatchCardClick(el, pair, side) {
 
 function finishLightning() {
   stopLightning();
-  const totalMs = performance.now() - lightningStartTime;
-  const totalSec = totalMs / 1000;
+  const roundMs = performance.now() - lightningStartTime;
+  lightningRoundTimes.push(roundMs);
+  lightningRound++;
 
-  // Personal best
-  const key = 'lightningBest';
+  document.getElementById('lightningGrid').innerHTML = '';
+  document.getElementById('lightningPairsLeft').textContent = '';
+
+  if (lightningRound < LIGHTNING_ROUNDS) {
+    // Show inter-round flash then start next round
+    const timerEl = document.getElementById('lightningTimer');
+    timerEl.textContent = `Round ${lightningRound} done — ${(roundMs/1000).toFixed(2)}s ✓`;
+    timerEl.style.color = 'var(--teal)';
+    setTimeout(() => {
+      timerEl.style.color = '';
+      startLightningRound();
+    }, 1200);
+    return;
+  }
+
+  // All rounds done — compute totals
+  const totalMs  = lightningRoundTimes.reduce((a, b) => a + b, 0);
+  const totalSec = totalMs / 1000;
+  const avgSec   = totalSec / LIGHTNING_ROUNDS;
+
+  // Personal best (total across 3 rounds)
+  const key   = 'lightningBest';
   const isNew = !gameBests[key] || totalMs < gameBests[key];
   if (isNew) { gameBests[key] = totalMs; saveGameBests(); }
 
-  // Find slowest pair (most likely to need review)
-  const sorted = [...lightningTimings].sort((a,b) => b.time - a.time);
+  // Per-round breakdown
+  const roundBreakdown = lightningRoundTimes
+    .map((ms, i) => `R${i+1}: ${(ms/1000).toFixed(2)}s`)
+    .join('  ·  ');
+
+  // Find overall slowest pairs
+  const sorted  = [...lightningTimings].sort((a,b) => b.time - a.time);
   const slowest = sorted.slice(0, 2).map(t => t.es);
 
-  // Emoji rating
   let emoji = '⚡', msg = 'Solid!';
-  if (totalSec < 8)  { emoji = '🚀'; msg = 'Lightning fast!'; }
-  else if (totalSec < 12) { emoji = '⚡'; msg = 'Great speed!'; }
-  else if (totalSec < 18) { emoji = '👍'; msg = 'Good — keep practising!'; }
-  else { emoji = '🐢'; msg = 'Keep drilling — speed comes with repetition'; }
+  if (avgSec < 8)       { emoji = '🚀'; msg = 'Lightning fast!'; }
+  else if (avgSec < 12) { emoji = '⚡'; msg = 'Great speed!'; }
+  else if (avgSec < 18) { emoji = '👍'; msg = 'Good — keep practising!'; }
+  else                  { emoji = '🐢'; msg = 'Keep drilling — speed comes with repetition'; }
 
   document.getElementById('lightningResultEmoji').textContent = emoji;
-  document.getElementById('lightningResultTime').textContent  = totalSec.toFixed(2) + 's';
-  document.getElementById('lightningResultMsg').textContent   = msg;
-  document.getElementById('lightningResultBest').textContent  = isNew ? '🏆 New personal best!' : `Best: ${(gameBests[key]/1000).toFixed(2)}s`;
+  document.getElementById('lightningResultTime').textContent  = `${totalSec.toFixed(2)}s total`;
+  document.getElementById('lightningResultMsg').textContent   = `${msg}  ·  avg ${avgSec.toFixed(2)}s/round`;
+  document.getElementById('lightningResultBest').textContent  = isNew
+    ? `🏆 New best! ${roundBreakdown}`
+    : `Best: ${(gameBests[key]/1000).toFixed(2)}s  ·  ${roundBreakdown}`;
   document.getElementById('lightningSlowWords').textContent   = slowest.length
-    ? `Slowest: ${slowest.join(' · ')} — add these to your review deck`
+    ? `Slowest pairs: ${slowest.join(' · ')}`
     : '';
 
-  document.getElementById('lightningGrid').innerHTML = '';
-  document.getElementById('lightningResult').style.display   = 'block';
-  document.getElementById('lightningPairsLeft').textContent  = '';
-  document.getElementById('lightningTimer').textContent      = totalSec.toFixed(2) + 's';
+  document.getElementById('lightningResult').style.display  = 'block';
+  document.getElementById('lightningTimer').textContent     = `${totalSec.toFixed(2)}s`;
+  document.getElementById('lightningTimer').style.color     = '';
   updateGameBests();
 }
 
@@ -4004,7 +4125,15 @@ document.addEventListener('keydown', e => {
   if (blitzActive && !blitzAnswered) {
     const n = parseInt(e.key);
     if (n >= 1 && n <= 4) {
-      const btns = document.querySelectorAll('.blitz-option:not([disabled])');
+      const btns = document.querySelectorAll('#blitzOptions .blitz-option:not([disabled])');
+      if (btns[n-1]) btns[n-1].click();
+    }
+  }
+  // Ear trainer: 1-4 to select answer option
+  if (earActive && !earAnswered) {
+    const n = parseInt(e.key);
+    if (n >= 1 && n <= 4) {
+      const btns = document.querySelectorAll('#earOptions .blitz-option:not([disabled])');
       if (btns[n-1]) btns[n-1].click();
     }
   }
@@ -4055,10 +4184,13 @@ function startBlitz() {
   // Ensure pool is at least 3× round length for variety
   let blitzSource = [...gamePool];
   if (blitzSource.length < BLITZ_Q_TOTAL * 3) {
-    // Widen draw — pull from all vocab at current level regardless of progress score
+    // Widen draw — respect gameCat selection, just ignore progress scores
     let wider = [];
-    const allW = Object.entries(VOCAB);
-    allW.forEach(([cat, words]) => words.forEach(w => wider.push({...w, _cat: cat})));
+    if (gameCat === '__smart__' || gameCat === '__all__') {
+      Object.entries(VOCAB).forEach(([cat, words]) => words.forEach(w => wider.push({...w, _cat: cat})));
+    } else {
+      (VOCAB[gameCat] || []).forEach(w => wider.push({...w, _cat: gameCat}));
+    }
     if (gameLevel !== 'All') wider = wider.filter(w => w.level === gameLevel);
     wider = wider.filter(w => w.es.length <= 30 && w.en.length <= 40);
     blitzSource = shuffle(wider).slice(0, 120);
@@ -4451,6 +4583,359 @@ function renderBlitzSummary() {
       row.appendChild(to);
     }
 
+    container.appendChild(row);
+  });
+}
+
+
+
+// ── EAR TRAINER ───────────────────────────────────────────────────────────────
+// Same mechanics as Blitz — same tiers, same generation counter, same pool —
+// but the word is spoken via TTS and never shown as text.
+
+// State
+let earPool        = [];
+let earIndex       = 0;
+let earScore       = 0;
+let earStreak      = 0;
+let earCorrect     = 0;
+let earWrong       = 0;
+let earTierIndex   = 0;
+let earActive      = false;
+let earTimer       = null;
+let earDeadline    = 0;
+let earAnswered    = false;
+let earGeneration  = 0;
+let earQCount      = 0;
+let earRoundLog    = [];
+let earCurrentWord = null;
+
+const EAR_Q_TOTAL   = 20;
+// Reuse BLITZ_TIERS — same speed ladder
+
+function startEar() {
+  if (!gamePool.length) gamePool = buildGamePool(120);
+  let src = [...gamePool];
+  if (src.length < EAR_Q_TOTAL * 3) {
+    let wider = [];
+    if (gameCat === '__smart__' || gameCat === '__all__') {
+      Object.entries(VOCAB).forEach(([cat, words]) => words.forEach(w => wider.push({...w, _cat: cat})));
+    } else {
+      (VOCAB[gameCat] || []).forEach(w => wider.push({...w, _cat: gameCat}));
+    }
+    if (gameLevel !== 'All') wider = wider.filter(w => w.level === gameLevel);
+    wider = wider.filter(w => w.es.length <= 30 && w.en.length <= 40);
+    src = shuffle(wider).slice(0, 120);
+  }
+  earPool       = shuffle(src);
+  earIndex      = 0;
+  earScore      = 0;
+  earStreak     = 0;
+  earCorrect    = 0;
+  earWrong      = 0;
+  earTierIndex  = 0;
+  earQCount     = 0;
+  earGeneration = 0;
+  earRoundLog   = [];
+  earActive     = true;
+
+  document.getElementById('earStartOverlay').style.display = 'none';
+  document.getElementById('earResult').style.display       = 'none';
+  document.getElementById('earRingSvg').style.opacity      = '1';
+
+  updateEarTierBadge();
+  loadEarQuestion();
+}
+
+function newEarRound() {
+  gamePool = buildGamePool(120);
+  startEar();
+}
+
+function stopEar() {
+  earActive = false;
+  cancelAnimationFrame(earTimer);
+  const ring = document.getElementById('earRingSvg');
+  if (ring) ring.style.opacity = '0';
+}
+
+function loadEarQuestion() {
+  if (!earActive) return;
+  if (earIndex >= earPool.length) {
+    earPool  = shuffle([...gamePool]);
+    earIndex = 0;
+  }
+
+  earAnswered    = false;
+  earCurrentWord = earPool[earIndex++];
+  const word     = earCurrentWord;
+
+  // Speak the Spanish word — this IS the question
+  speechSynthesis.cancel();
+  const utter    = new SpeechSynthesisUtterance(word.es);
+  utter.lang     = 'es-MX';
+  utter.rate     = BLITZ_TIERS[earTierIndex].ms >= 3000 ? 0.8 : 0.9;
+  if (selectedVoice) utter.voice = selectedVoice;
+  speechSynthesis.speak(utter);
+
+  // Pulse the speaker button
+  const playBtn = document.getElementById('earPlayBtn');
+  if (playBtn) {
+    playBtn.style.transform = 'scale(1.15)';
+    playBtn.style.background = 'var(--primary-dark)';
+    setTimeout(() => {
+      playBtn.style.transform = '';
+      playBtn.style.background = 'var(--primary)';
+    }, 400);
+  }
+
+  // Build 4 English options (correct + 3 distractors)
+  const correct     = word.en;
+  const distractors = buildEarDistractors(word, correct, 3);
+  const options     = shuffle([correct, ...distractors]);
+
+  const container = document.getElementById('earOptions');
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className   = 'blitz-option'; // reuse blitz option styling
+    btn.textContent = opt;
+    btn.onclick     = () => answerEar(btn, opt, correct, word);
+    container.appendChild(btn);
+  });
+
+  // Start countdown ring
+  earGeneration++;
+  const myGen   = earGeneration;
+  const tier    = BLITZ_TIERS[earTierIndex];
+  earDeadline   = performance.now() + tier.ms;
+  // Give a tiny extra delay for the audio to start before ring drains
+  setTimeout(() => {
+    if (earActive && earGeneration === myGen) {
+      earTimer = requestAnimationFrame(() => tickEarRing(myGen));
+    }
+  }, 200);
+
+  updateEarScoreDisplay();
+}
+
+function replayEarWord() {
+  if (!earActive || !earCurrentWord) return;
+  speechSynthesis.cancel();
+  const utter  = new SpeechSynthesisUtterance(earCurrentWord.es);
+  utter.lang   = 'es-MX';
+  utter.rate   = 0.8;
+  if (selectedVoice) utter.voice = selectedVoice;
+  speechSynthesis.speak(utter);
+
+  const playBtn = document.getElementById('earPlayBtn');
+  if (playBtn) {
+    playBtn.style.transform = 'scale(1.15)';
+    setTimeout(() => { playBtn.style.transform = ''; }, 300);
+  }
+}
+
+function buildEarDistractors(word, correctAnswer, count) {
+  const allWords = Object.values(VOCAB).flat();
+  const cat      = word._cat || '';
+  const sameCat  = (VOCAB[cat] || []).filter(w => w.en !== correctAnswer && w.en.length <= 40);
+  const sameLvl  = allWords.filter(w => w.level === word.level && w.en !== correctAnswer && w.en.length <= 40);
+  const any      = allWords.filter(w => w.en !== correctAnswer && w.en.length <= 40);
+  const pool     = shuffle([...sameCat.slice(0,20), ...sameLvl.slice(0,20), ...any.slice(0,30)]);
+  const seen     = new Set([correctAnswer]);
+  const result   = [];
+  for (const w of pool) {
+    if (!seen.has(w.en)) { seen.add(w.en); result.push(w.en); if (result.length === count) break; }
+  }
+  while (result.length < count) result.push('—');
+  return result;
+}
+
+function tickEarRing(myGen) {
+  if (myGen !== earGeneration) return;
+  if (!earActive || earAnswered) return;
+
+  const now       = performance.now();
+  const remaining = Math.max(0, earDeadline - now);
+  const tier      = BLITZ_TIERS[earTierIndex];
+  const fraction  = remaining / tier.ms;
+
+  const arc = document.getElementById('earRingArc');
+  if (arc) {
+    arc.style.strokeDashoffset = EAR_RING_CIRC * (1 - fraction);
+    arc.className.baseVal = fraction > 0.5 ? 'ring-ok' : fraction > 0.25 ? 'ring-warning' : 'ring-danger';
+  }
+
+  if (remaining <= 0) { timeUpEar(); return; }
+  earTimer = requestAnimationFrame(() => tickEarRing(myGen));
+}
+
+const EAR_RING_CIRC = 2 * Math.PI * 82;
+
+function timeUpEar() {
+  if (!earActive || earAnswered) return;
+  earAnswered = true;
+  earWrong++;
+  earStreak = 0;
+
+  // Reveal correct answer
+  const container = document.getElementById('earOptions');
+  const word = earCurrentWord;
+  container.querySelectorAll('.blitz-option').forEach(btn => {
+    btn.disabled = true;
+    if (btn.textContent === word.en) btn.classList.add('reveal');
+  });
+
+  earRoundLog.push({ es: word.es, en: word.en, chosen: '(time out)', wasRight: false, timedOut: true });
+
+  if (earTierIndex > 0) earTierIndex--;
+  updateEarTierBadge();
+  nudgeProgress(word, false);
+
+  earQCount++;
+  updateEarScoreDisplay();
+  if (earQCount >= EAR_Q_TOTAL) { setTimeout(finishEar, 900); }
+  else { setTimeout(() => { if (earActive) loadEarQuestion(); }, 800); }
+}
+
+function answerEar(btn, chosen, correct, word) {
+  if (!earActive || earAnswered) return;
+  earAnswered = true;
+  earGeneration++;
+  cancelAnimationFrame(earTimer);
+
+  const container = document.getElementById('earOptions');
+  container.querySelectorAll('.blitz-option').forEach(b => b.disabled = true);
+
+  earRoundLog.push({ es: word.es, en: word.en, chosen, correct, wasRight: chosen === correct });
+
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    earCorrect++;
+    earStreak++;
+
+    const tier       = BLITZ_TIERS[earTierIndex];
+    const elapsed    = tier.ms - (earDeadline - performance.now());
+    const speedRatio = Math.max(0, 1 - elapsed / tier.ms);
+    const bonus      = speedRatio > 0.75 ? 2 : speedRatio > 0.5 ? 1.5 : 1;
+    earScore        += Math.round(tier.pts * bonus);
+
+    bumpStreak();
+    nudgeProgress(word, true);
+
+    if (earStreak > 0 && earStreak % 5 === 0 && earTierIndex < BLITZ_TIERS.length - 1) {
+      earTierIndex++;
+      updateEarTierBadge();
+      const badge = document.getElementById('earTierBadge');
+      if (badge) { badge.style.transform = 'scale(1.2)'; setTimeout(() => badge.style.transform = '', 300); }
+    }
+
+    earQCount++;
+    updateEarScoreDisplay();
+    if (earQCount >= EAR_Q_TOTAL) { setTimeout(finishEar, 400); }
+    else { setTimeout(() => { if (earActive) loadEarQuestion(); }, 350); }
+
+  } else {
+    btn.classList.add('wrong');
+    container.querySelectorAll('.blitz-option').forEach(b => { if (b.textContent === correct) b.classList.add('reveal'); });
+
+    earWrong++;
+    earStreak = 0;
+    if (earTierIndex > 0) earTierIndex--;
+    updateEarTierBadge();
+    nudgeProgress(word, false);
+
+    earQCount++;
+    updateEarScoreDisplay();
+    if (earQCount >= EAR_Q_TOTAL) { setTimeout(finishEar, 750); }
+    else { setTimeout(() => { if (earActive) loadEarQuestion(); }, 700); }
+  }
+}
+
+function updateEarTierBadge() {
+  const tier  = BLITZ_TIERS[earTierIndex];
+  const badge = document.getElementById('earTierBadge');
+  if (badge) { badge.textContent = tier.label; badge.className = tier.cssClass; }
+}
+
+function updateEarScoreDisplay() {
+  const scoreEl = document.getElementById('earScoreDisplay');
+  const qEl     = document.getElementById('earQCounter');
+  if (scoreEl) scoreEl.textContent = earScore + ' pts';
+  if (qEl)     qEl.textContent     = `Q ${earQCount} / ${EAR_Q_TOTAL}  ·  🔥 ${earStreak}`;
+}
+
+function finishEar() {
+  stopEar();
+
+  const key   = 'earBest';
+  const isNew = !gameBests[key] || earScore > gameBests[key];
+  if (isNew) { gameBests[key] = earScore; saveGameBests(); }
+
+  const accuracy = earCorrect + earWrong > 0
+    ? Math.round(earCorrect / (earCorrect + earWrong) * 100) : 0;
+  const tier  = BLITZ_TIERS[earTierIndex];
+
+  let emoji = '🔈';
+  if (earScore > 500)      emoji = '🎧';
+  else if (earScore > 300) emoji = '🔊';
+  else if (earScore > 150) emoji = '👂';
+
+  document.getElementById('earResultEmoji').textContent  = emoji;
+  document.getElementById('earResultTier').textContent   = `Reached: ${tier.label}`;
+  document.getElementById('earResultScore').textContent  = earScore + ' pts';
+  document.getElementById('earResultDetail').textContent =
+    `${earCorrect} correct · ${earWrong} wrong · ${accuracy}% accuracy`;
+  document.getElementById('earResultBest').textContent   =
+    isNew ? '🏆 New personal best!' : `Best: ${gameBests[key]} pts`;
+
+  document.getElementById('earResult').style.display    = 'block';
+  document.getElementById('earOptions').innerHTML       = '';
+  document.getElementById('earQCounter').textContent    = `Q ${EAR_Q_TOTAL} / ${EAR_Q_TOTAL}`;
+  document.getElementById('earRingSvg').style.opacity   = '0';
+
+  // Round summary
+  renderEarSummary();
+  updateGameBests();
+}
+
+function renderEarSummary() {
+  const container = document.getElementById('earRoundSummary');
+  if (!container) return;
+  container.innerHTML = '';
+  earRoundLog.forEach(item => {
+    const row = document.createElement('div');
+    row.style.cssText = [
+      'display:flex', 'align-items:center', 'gap:8px',
+      'padding:5px 8px', 'border-radius:var(--radius-xs)', 'font-size:13px',
+      item.wasRight
+        ? 'background:var(--teal-light);color:var(--teal-dark);'
+        : 'background:var(--error-bg);color:var(--error);'
+    ].join(';');
+
+    const icon = document.createElement('span');
+    icon.textContent = item.timedOut ? '⏱' : item.wasRight ? '✓' : '✗';
+    icon.style.cssText = 'font-weight:700;font-size:14px;flex-shrink:0;width:18px;';
+
+    // Show Spanish word + correct English (both always visible after round)
+    const pair = document.createElement('span');
+    pair.style.cssText = 'flex:1;font-weight:600;';
+    pair.textContent = item.es + '  =  ' + item.en;
+
+    row.appendChild(icon);
+    row.appendChild(pair);
+
+    if (!item.wasRight && !item.timedOut) {
+      const chose = document.createElement('span');
+      chose.style.cssText = 'font-size:11px;opacity:0.75;flex-shrink:0;';
+      chose.textContent = '→ "' + item.chosen + '"';
+      row.appendChild(chose);
+    } else if (item.timedOut) {
+      const to = document.createElement('span');
+      to.style.cssText = 'font-size:11px;opacity:0.75;flex-shrink:0;';
+      to.textContent = 'timed out';
+      row.appendChild(to);
+    }
     container.appendChild(row);
   });
 }
