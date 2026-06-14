@@ -4688,12 +4688,7 @@ function onVoiceChange() {
 // ── TTS core — all audio goes through /api/tts (server-side key) ──
 let currentAudio = null; // track playing audio so we can cancel
 
-function speak(text, rate, onEnd) {
-  // Cancel any currently playing audio
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
-  }
+function speak(text, rate, onEnd, onReady) {
   cancelSpeak();
 
   fetch('/api/tts', {
@@ -4709,8 +4704,11 @@ function speak(text, rate, onEnd) {
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     currentAudio = audio;
-    // speakRate controls playback speed (0.6 slow, 0.85 normal, 1.1 fast)
     audio.playbackRate = rate || speakRate || 0.85;
+
+    audio.onplay = () => {
+      if (onReady) onReady();       // ← timer starts HERE
+    };
     audio.onended = () => {
       URL.revokeObjectURL(url);
       currentAudio = null;
@@ -4720,16 +4718,18 @@ function speak(text, rate, onEnd) {
       URL.revokeObjectURL(url);
       currentAudio = null;
       fallbackBrowserSpeech(text, rate, onEnd);
+      if (onReady) onReady();       // ← still start timer on fallback
     };
     audio.play().catch(() => {
       fallbackBrowserSpeech(text, rate, onEnd);
+      if (onReady) onReady();
     });
   })
   .catch(() => {
     fallbackBrowserSpeech(text, rate, onEnd);
+    if (onReady) onReady();         // ← start timer even if fetch fails
   });
 }
-
 function fallbackBrowserSpeech(text, rate, onEnd) {
   cancelSpeak();
   const utter = new SpeechSynthesisUtterance(text);
@@ -6508,6 +6508,30 @@ function loadEarQuestion() {
   }, 200);
 
   updateEarScoreDisplay();
+  
+  const earRate = BLITZ_TIERS[earTierIndex].ms >= 3000 ? 0.8 : 0.9;
+  const timerMs = BLITZ_TIERS[earTierIndex].ms;
+
+  speak(
+    word.es,
+    earRate,
+    null,                            // onEnd — not needed
+    () => startEarTimer(timerMs)     // onReady — fires when audio plays
+  );
+}
+
+function startEarTimer(ms) {
+  clearInterval(earTimer);
+  earTimeLeft = ms / 1000;
+  updateEarTimerDisplay();
+  earTimer = setInterval(() => {
+    earTimeLeft -= 0.1;
+    updateEarTimerDisplay();
+    if (earTimeLeft <= 0) {
+      clearInterval(earTimer);
+      handleEarTimeout();
+    }
+  }, 100);
 }
 
 function replayEarWord() {
