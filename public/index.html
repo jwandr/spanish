@@ -4694,7 +4694,7 @@ function speak(text, rate, onEnd) {
     currentAudio.pause();
     currentAudio = null;
   }
-  speechSynthesis.cancel();
+  cancelSpeak();
 
   fetch('/api/tts', {
     method: 'POST',
@@ -4731,7 +4731,7 @@ function speak(text, rate, onEnd) {
 }
 
 function fallbackBrowserSpeech(text, rate, onEnd) {
-  speechSynthesis.cancel();
+  cancelSpeak();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'es-MX';
   utter.rate = rate || speakRate || 0.85;
@@ -4773,7 +4773,7 @@ function setSpeakMode(mode) {
   document.getElementById('dictationModePanel').style.display = mode === 'dictation' ? 'block' : 'none';
   // Category pills only relevant for shadow/listen
   document.getElementById('speakCatPills').style.display = mode === 'dictation' ? 'none' : '';
-  speechSynthesis.cancel();
+  cancelSpeak();
   clearAutoAdvance();
   if (mode === 'shadow')    { loadSpeakPhrase(); }
   if (mode === 'listen')    { loadListenPhrase(); setTimeout(playListenPhrase, 400); }
@@ -4838,8 +4838,8 @@ function playSpeakPhrase(repeat) {
   }
 }
 
-function nextSpeak() { speakIndex++; loadSpeakPhrase(); speechSynthesis.cancel(); }
-function prevSpeak() { speakIndex = Math.max(0, speakIndex-1); loadSpeakPhrase(); speechSynthesis.cancel(); }
+function nextSpeak() { speakIndex++; loadSpeakPhrase(); cancelSpeak(); }
+function prevSpeak() { speakIndex = Math.max(0, speakIndex-1); loadSpeakPhrase(); cancelSpeak(); }
 
 // ── Syllable breakdown ────────────────────────────────────────────────────────
 function toggleSyllables() {
@@ -4937,16 +4937,24 @@ function playListenPhrase() {
   });
 }
 
+function cancelSpeak() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  speechSynthesis.cancel();
+}
+
 function nextListen() {
   listenIndex++;
   loadListenPhrase();
-  speechSynthesis.cancel();
+  cancelSpeak();
   if (speakMode === 'listen') setTimeout(playListenPhrase, 400);
 }
 function prevListen() {
   listenIndex = Math.max(0, listenIndex-1);
   loadListenPhrase();
-  speechSynthesis.cancel();
+  cancelSpeak();
 }
 
 // ── Dictation mode ────────────────────────────────────────────────────────────
@@ -6458,12 +6466,8 @@ function loadEarQuestion() {
   const word     = earCurrentWord;
 
   // Speak the Spanish word — this IS the question
-  speechSynthesis.cancel();
-  const utter    = new SpeechSynthesisUtterance(word.es);
-  utter.lang     = 'es-MX';
-  utter.rate     = BLITZ_TIERS[earTierIndex].ms >= 3000 ? 0.8 : 0.9;
-  if (selectedVoice) utter.voice = selectedVoice;
-  speechSynthesis.speak(utter);
+  const earRate = BLITZ_TIERS[earTierIndex].ms >= 3000 ? 0.8 : 0.9;
+  speak(word.es, earRate);
 
   // Pulse the speaker button
   const playBtn = document.getElementById('earPlayBtn');
@@ -6508,12 +6512,7 @@ function loadEarQuestion() {
 
 function replayEarWord() {
   if (!earActive || !earCurrentWord) return;
-  speechSynthesis.cancel();
-  const utter  = new SpeechSynthesisUtterance(earCurrentWord.es);
-  utter.lang   = 'es-MX';
-  utter.rate   = 0.8;
-  if (selectedVoice) utter.voice = selectedVoice;
-  speechSynthesis.speak(utter);
+  speak(earCurrentWord.es, 0.8);
 
   const playBtn = document.getElementById('earPlayBtn');
   if (playBtn) {
