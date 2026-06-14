@@ -4456,7 +4456,9 @@ function fallbackSpeak(text) {
     ) || voices[0];
 
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.voice = voice;
+  if (selectedVoice instanceof SpeechSynthesisVoice) {
+  utterance.voice = selectedVoice;
+}
   utterance.lang = "es-ES";
 
   speechSynthesis.speak(utterance);
