@@ -692,6 +692,8 @@
   <script src="vocab-extended-medical.js"></script>
   <script src="vocab-extended-wildlife.js"></script>
   <script src="vocab-extended-b2.js"></script>
+  
+  <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
 </head>
 <body>
 
@@ -2133,24 +2135,6 @@ let practVerbIndex = 0;
 let conjShuffled = [];
 
 let globalStreak = settings.streak || 0;
-
-let useAzure = true;
-
-function resolveVoice() {
-  if (useAzure) {
-    return {
-      type: "azure",
-      voice: VOICE_MAP[selectedVoiceKey || "mx_female"]
-    };
-  }
-
-  return {
-    type: "browser",
-    voice: selectedBrowserVoice
-  };
-}
-useAzure = true;
-selectedVoiceKey = "mx_female";
 
 /* ── Tabs ── */
 document.querySelectorAll('.nav-tab').forEach(t => {
@@ -4631,6 +4615,10 @@ let speakDeck     = [];
 let speakIndex    = 0;
 let listenIndex   = 0;
 let speakRate     = 0.85;
+
+let useAzure = true;
+let selectedVoiceKey = "es-MX-DaliaNeural";
+
 let selectedVoice = null;
 let autoAdvance   = false;
 let autoAdvanceTimer = null;
@@ -4649,54 +4637,114 @@ let dictRevealed  = false;
 
 // ── Voice loading ─────────────────────────────────────────────────────────────
 function loadVoices() {
-  const voices = speechSynthesis.getVoices();
-  if (!voices.length) return;
-  const sel = document.getElementById('voiceSelect');
-  sel.innerHTML = '';
-  const ranked = [
-    ...voices.filter(v => ['es-MX','es-419','es-US','es-CO','es-AR','es-PE','es-CL'].includes(v.lang)),
-    ...voices.filter(v => v.lang.startsWith('es-') && !['es-MX','es-419','es-US','es-CO','es-AR','es-PE','es-CL'].includes(v.lang)),
-    ...voices.filter(v => !v.lang.startsWith('es-') && v.lang.startsWith('es'))
+
+  const sel =
+    document.getElementById("voiceSelect");
+
+  sel.innerHTML = "";
+
+  const azureVoices = [
+    {
+      key: "es-MX-DaliaNeural",
+      label: "🇲🇽 Dalia Neural (Azure)"
+    },
+    {
+      key: "es-MX-JorgeNeural",
+      label: "🇲🇽 Jorge Neural (Azure)"
+    },
+    {
+      key: "es-ES-ElviraNeural",
+      label: "🇪🇸 Elvira Neural (Azure)"
+    },
+    {
+      key: "es-ES-AlvaroNeural",
+      label: "🇪🇸 Alvaro Neural (Azure)"
+    }
   ];
-  const seen = new Set();
-  const unique = ranked.filter(v => {
-    const key = v.name + v.lang;
-    if (seen.has(key)) return false;
-    seen.add(key); return true;
-  });
-  if (!unique.length) {
-    const opt = document.createElement('option');
-    opt.textContent = 'No Spanish voices — install via OS Language Settings';
-    opt.disabled = true;
-    sel.appendChild(opt);
-    return;
-  }
-  unique.forEach((v, i) => {
-    const opt = document.createElement('option');
-    const region = v.lang.includes('-') ? v.lang.split('-')[1] : v.lang;
-    opt.value = i;
-    opt.textContent = v.lang.startsWith('es-') ? `${v.name} (${region})` : v.name;
+
+  azureVoices.forEach(v => {
+
+    const opt =
+      document.createElement("option");
+
+    opt.value = v.key;
+    opt.textContent = v.label;
+
     sel.appendChild(opt);
   });
-  sel._voices = unique;
-  selectedVoice = unique[0];
+
+  sel.value = selectedVoiceKey;
 }
+
 speechSynthesis.onvoiceschanged = loadVoices;
 setTimeout(loadVoices, 100);
 
 function onVoiceChange() {
-  const sel = document.getElementById('voiceSelect');
-  if (sel._voices) selectedVoice = sel._voices[parseInt(sel.value)] || null;
+
+  const sel =
+    document.getElementById("voiceSelect");
+
+  selectedVoiceKey = sel.value;
 }
 
 // ── TTS core ──────────────────────────────────────────────────────────────────
 function speak(text, rate, onEnd) {
+
+  if (useAzure && window.SpeechSDK) {
+
+    const speechConfig =
+      SpeechSDK.SpeechConfig.fromSubscription(
+        AZURE_SPEECH_KEY,
+        AZURE_SPEECH_REGION
+      );
+
+    speechConfig.speechSynthesisVoiceName =
+      selectedVoiceKey;
+
+    speechConfig.speechSynthesisOutputFormat =
+      SpeechSDK.SpeechSynthesisOutputFormat.Audio24Khz48KBitRateMonoMp3;
+
+    const synthesizer =
+      new SpeechSDK.SpeechSynthesizer(speechConfig);
+
+    synthesizer.speakTextAsync(
+      text,
+      result => {
+        synthesizer.close();
+
+        if (onEnd) onEnd();
+      },
+      err => {
+        console.error("Azure speech error:", err);
+
+        synthesizer.close();
+
+        fallbackBrowserSpeech(text, rate, onEnd);
+      }
+    );
+
+    return;
+  }
+
+  fallbackBrowserSpeech(text, rate, onEnd);
+}
+
+function fallbackBrowserSpeech(text, rate, onEnd) {
+
   speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'es-MX';
+
+  const utter =
+    new SpeechSynthesisUtterance(text);
+
+  utter.lang = "es-MX";
   utter.rate = rate || speakRate;
-  if (selectedVoice) utter.voice = selectedVoice;
-  if (onEnd) utter.onend = onEnd;
+
+  if (selectedVoice)
+    utter.voice = selectedVoice;
+
+  if (onEnd)
+    utter.onend = onEnd;
+
   speechSynthesis.speak(utter);
 }
 
