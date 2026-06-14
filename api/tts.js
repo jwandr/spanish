@@ -29,8 +29,11 @@ export default async function handler(req, res) {
   const selectedVoice =
     allowedVoices.has(voice) ? voice : "es-MX-JorgeNeural";
 
-  const ssml = `
-<speak version="1.0" xml:lang="es-MX">
+  // Derive the locale from the voice key (e.g. "es-AR-ElenaNeural" → "es-AR")
+const locale = selectedVoice.split('-').slice(0, 2).join('-');
+
+const ssml = `
+<speak version="1.0" xml:lang="${locale}">
   <voice name="${selectedVoice}">
     ${text}
   </voice>
