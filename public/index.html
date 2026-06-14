@@ -4332,7 +4332,6 @@ document.getElementById('yoFormInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') checkYoForm();
 });
 
-
 /* ══ SPEAK ══ */
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -4341,23 +4340,27 @@ let speakDeck     = [];
 let speakIndex    = 0;
 let listenIndex   = 0;
 let speakRate     = 0.85;
-let selectedVoice = null;
+
+let selectedVoiceKey = "mx_female"; // ✅ CLEAN: single source of truth
+
 let autoAdvance   = false;
 let autoAdvanceTimer = null;
+
 let speakMode     = 'shadow'; // 'shadow' | 'listen' | 'dictation'
 let showSyllables = false;
 let listenRevealed = false;
 
 // Dictation state
-let dictSource    = 'phrases'; // 'phrases' | 'vocab' | 'mixed'
-let dictDifficulty = 'normal'; // 'normal' | 'hard'
+let dictSource    = 'phrases';
+let dictDifficulty = 'normal';
 let dictDeck      = [];
 let dictIndex     = 0;
 let dictCorrect   = 0;
 let dictWrong     = 0;
 let dictRevealed  = false;
 
-// ── Voice loading ─────────────────────────────────────────────────────────────
+
+// ── Voice loading (UI only - NO browser voices) ─────────────────────────────
 function loadVoices() {
   const sel = document.getElementById('voiceSelect');
   sel.innerHTML = '';
@@ -4376,15 +4379,16 @@ function loadVoices() {
     sel.appendChild(el);
   });
 
-  sel.value = "mx_female";
-  selectedVoice = sel.value;
+  sel.value = selectedVoiceKey;
 }
 
 function onVoiceChange() {
   const sel = document.getElementById('voiceSelect');
-  selectedVoice = sel.value;
+  selectedVoiceKey = sel.value;
 }
 
+
+// ── Azure voice map ─────────────────────────────────────────────────────────
 const VOICE_MAP = {
   mx_female: "es-MX-DaliaNeural",
   mx_male: "es-MX-JorgeNeural",
@@ -4392,31 +4396,35 @@ const VOICE_MAP = {
   cl_male: "es-CL-LorenzoNeural"
 };
 
-// ── TTS core ──────────────────────────────────────────────────────────────────
-async function speak(text, voice = "es-MX-DaliaNeural") {
+
+// ── TTS CORE (Azure + fallback) ─────────────────────────────────────────────
+async function speak(text) {
+  const azureVoice = VOICE_MAP[selectedVoiceKey] || "es-MX-DaliaNeural";
+
   try {
     const res = await fetch("/api/tts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ text, voice })
+      body: JSON.stringify({
+        text,
+        voice: azureVoice
+      })
     });
 
-    // 🔥 IMPORTANT: surface real Azure errors
     if (!res.ok) {
       const errText = await res.text();
-      console.error("❌ Azure error response:", errText);
-      throw new Error(errText || "Azure failed");
+      console.error("❌ Azure error:", errText);
+      throw new Error(errText);
     }
 
     const blob = await res.blob();
 
-    // 🧪 DEBUG: confirms whether Azure actually returned audio
     console.log("🎧 Azure blob size:", blob.size);
 
     if (!blob || blob.size === 0) {
-      throw new Error("Empty audio blob from Azure");
+      throw new Error("Empty audio from Azure");
     }
 
     const url = URL.createObjectURL(blob);
@@ -4424,51 +4432,43 @@ async function speak(text, voice = "es-MX-DaliaNeural") {
     const audio = new Audio(url);
     audio.preload = "auto";
 
-    // 🧹 cleanup to avoid memory leaks
     audio.onended = () => {
       URL.revokeObjectURL(url);
     };
 
-    // 🔊 play + catch autoplay issues (Safari etc.)
     audio.play().catch(err => {
-      console.warn("⚠️ Audio play blocked or failed:", err);
+      console.warn("⚠️ Audio blocked:", err);
     });
 
   } catch (err) {
     console.warn("❌ Azure failed → fallback", err);
-
     fallbackSpeak(text);
   }
 }
 
 
-// ─────────────────────────────────────────────────────────────
-// Fallback (browser speech synthesis)
-// ─────────────────────────────────────────────────────────────
-
+// ── Browser fallback (SAFE, no voice dependency) ────────────────────────────
 function fallbackSpeak(text) {
   const voices = speechSynthesis.getVoices();
 
   const voice =
     voices.find(v =>
-      v.lang.startsWith("es") &&
-      !v.name.toLowerCase().includes("zarvox")
-    ) || voices[0];
+      v.lang.startsWith("es")
+    ) || null;
 
   const utterance = new SpeechSynthesisUtterance(text);
-  if (selectedVoice instanceof SpeechSynthesisVoice) {
-  utterance.voice = selectedVoice;
-}
+
+  if (voice) {
+    utterance.voice = voice;
+  }
+
   utterance.lang = "es-ES";
 
   speechSynthesis.speak(utterance);
 }
 
 
-// ─────────────────────────────────────────────────────────────
-// Speed control
-// ─────────────────────────────────────────────────────────────
-
+// ── Speed control ────────────────────────────────────────────────────────────
 function setSpeed(rate) {
   speakRate = rate;
 
@@ -4481,10 +4481,7 @@ function setSpeed(rate) {
 }
 
 
-// ─────────────────────────────────────────────────────────────
-// Auto-advance toggle
-// ─────────────────────────────────────────────────────────────
-
+// ── Auto-advance ─────────────────────────────────────────────────────────────
 function toggleAutoAdvance() {
   autoAdvance = !autoAdvance;
 
@@ -4512,43 +4509,66 @@ function scheduleAutoAdvance(nextFn, playFn) {
 
   autoAdvanceTimer = setTimeout(() => {
     nextFn();
-
     setTimeout(playFn, 500);
   }, 1800);
 }
 
-// ── Mode switching ────────────────────────────────────────────────────────────
+
+// ── Mode switching ───────────────────────────────────────────────────────────
 function setSpeakMode(mode) {
   speakMode = mode;
+
   document.querySelectorAll('[data-speakmode]').forEach(b => {
     b.classList.toggle('active', b.dataset.speakmode === mode);
   });
+
   document.getElementById('shadowModePanel').style.display    = mode === 'shadow'    ? 'block' : 'none';
   document.getElementById('listenModePanel').style.display    = mode === 'listen'    ? 'block' : 'none';
   document.getElementById('dictationModePanel').style.display = mode === 'dictation' ? 'block' : 'none';
-  // Category pills only relevant for shadow/listen
+
   document.getElementById('speakCatPills').style.display = mode === 'dictation' ? 'none' : '';
+
   speechSynthesis.cancel();
   clearAutoAdvance();
-  if (mode === 'shadow')    { loadSpeakPhrase(); }
-  if (mode === 'listen')    { loadListenPhrase(); setTimeout(playListenPhrase, 400); }
-  if (mode === 'dictation') { buildDictDeck(); loadDictPhrase(); }
+
+  if (mode === 'shadow') loadSpeakPhrase();
+  if (mode === 'listen') {
+    loadListenPhrase();
+    setTimeout(playListenPhrase, 400);
+  }
+  if (mode === 'dictation') {
+    buildDictDeck();
+    loadDictPhrase();
+  }
 }
 
-// ── Category pills ────────────────────────────────────────────────────────────
+
+// ── Category pills ───────────────────────────────────────────────────────────
 function buildSpeakCatPills() {
   const row = document.getElementById('speakCatPills');
   row.innerHTML = '';
+
   Object.keys(SPEAK_PHRASES).forEach(cat => {
     const p = document.createElement('div');
     p.className = 'pill' + (cat === speakCat ? ' active' : '');
     p.textContent = cat;
+
     p.onclick = () => {
-      speakCat = cat; speakIndex = 0; listenIndex = 0;
-      buildSpeakCatPills(); buildSpeakDeck();
-      if (speakMode === 'listen') { loadListenPhrase(); setTimeout(playListenPhrase, 400); }
-      else loadSpeakPhrase();
+      speakCat = cat;
+      speakIndex = 0;
+      listenIndex = 0;
+
+      buildSpeakCatPills();
+      buildSpeakDeck();
+
+      if (speakMode === 'listen') {
+        loadListenPhrase();
+        setTimeout(playListenPhrase, 400);
+      } else {
+        loadSpeakPhrase();
+      }
     };
+
     row.appendChild(p);
   });
 }
@@ -4559,102 +4579,63 @@ function buildSpeakDeck() {
 
 function shuffleSpeakDeck() {
   speakDeck = shuffle([...(SPEAK_PHRASES[speakCat] || [])]);
-  speakIndex = 0; listenIndex = 0;
-  if (speakMode === 'listen') { loadListenPhrase(); setTimeout(playListenPhrase, 300); }
-  else loadSpeakPhrase();
+  speakIndex = 0;
+  listenIndex = 0;
+
+  if (speakMode === 'listen') {
+    loadListenPhrase();
+    setTimeout(playListenPhrase, 300);
+  } else {
+    loadSpeakPhrase();
+  }
 }
 
-// ── Shadow mode ───────────────────────────────────────────────────────────────
+
+// ── Shadow mode ─────────────────────────────────────────────────────────────
 function loadSpeakPhrase() {
   if (!speakDeck.length) buildSpeakDeck();
   if (!speakDeck.length) return;
+
   const ph = speakDeck[speakIndex % speakDeck.length];
+
   document.getElementById('speakPhrase').textContent      = ph.es;
   document.getElementById('speakTranslation').textContent = ph.en;
   document.getElementById('speakPhonetic').textContent    = ph.phonetic ? '📢 ' + ph.phonetic : '';
   document.getElementById('speakNotes').textContent       = ph.notes || '';
-  document.getElementById('speakCounter').textContent     = `Phrase ${(speakIndex % speakDeck.length)+1} of ${speakDeck.length}`;
+  document.getElementById('speakCounter').textContent     =
+    `Phrase ${(speakIndex % speakDeck.length)+1} of ${speakDeck.length}`;
+
   showSyllables = false;
   document.getElementById('syllableBreakdown').style.display = 'none';
   document.getElementById('syllableBtn').textContent = 'Show syllable breakdown';
+
   clearAutoAdvance();
 }
 
 function playSpeakPhrase(repeat) {
   const phrase = document.getElementById('speakPhrase').textContent;
+
   if (repeat) {
-    speak(phrase, speakRate, () => setTimeout(() =>
-      speak(phrase, speakRate, () => setTimeout(() =>
-        speak(phrase, speakRate), 600)), 600));
+    speak(phrase);
+    setTimeout(() => speak(phrase), 600);
+    setTimeout(() => speak(phrase), 1200);
   } else {
-    speak(phrase, speakRate, () => {
-      if (autoAdvance) scheduleAutoAdvance(nextSpeak, playSpeakPhrase);
-    });
-  }
-}
-
-function nextSpeak() { speakIndex++; loadSpeakPhrase(); speechSynthesis.cancel(); }
-function prevSpeak() { speakIndex = Math.max(0, speakIndex-1); loadSpeakPhrase(); speechSynthesis.cancel(); }
-
-// ── Syllable breakdown ────────────────────────────────────────────────────────
-function toggleSyllables() {
-  showSyllables = !showSyllables;
-  const box = document.getElementById('syllableBreakdown');
-  const btn = document.getElementById('syllableBtn');
-  if (showSyllables) {
-    const ph = speakDeck[speakIndex % speakDeck.length];
-    box.innerHTML = buildSyllableBreakdown(ph.es);
-    box.style.display = 'block';
-    btn.textContent = 'Hide breakdown';
-  } else {
-    box.style.display = 'none';
-    btn.textContent = 'Show syllable breakdown';
-  }
-}
-
-function buildSyllableBreakdown(text) {
-  const words = text.replace(/[¿¡.,;:!?]/g, '').split(/\s+/);
-  return words.map(word => {
-    const syllables = syllabify(word);
-    const stressed  = getStressIndex(syllables, word);
-    return syllables.map((s, i) =>
-      `<span style="${i===stressed?'font-weight:700;font-size:16px;color:var(--terracotta)':'font-size:15px;opacity:0.75'}">${s}</span>`
-    ).join('<span style="opacity:0.4;">·</span>');
-  }).join('&nbsp;&nbsp;');
-}
-
-function syllabify(word) {
-  const w = word.toLowerCase();
-  const vowels = 'aeiouáéíóúü';
-  const syllables = [];
-  let current = '';
-  let i = 0;
-  while (i < w.length) {
-    current += w[i];
-    const isV = vowels.includes(w[i]);
-    const nV  = i+1 < w.length && vowels.includes(w[i+1]);
-    if (isV) {
-      const weak = 'iuíú';
-      if (nV && (weak.includes(w[i]) || weak.includes(w[i+1]))) { current += w[i+1]; i++; }
-      if (i+1 < w.length && !vowels.includes(w[i+1])) {
-        if (i+2 < w.length && !vowels.includes(w[i+2]) && i+3 < w.length && vowels.includes(w[i+3])) { current += w[i+1]; i++; }
-        syllables.push(current); current = '';
-      }
+    speak(phrase);
+    if (autoAdvance) {
+      scheduleAutoAdvance(nextSpeak, playSpeakPhrase);
     }
-    i++;
   }
-  if (current) syllables.push(current);
-  return syllables.length ? syllables : [word];
 }
 
-function getStressIndex(syllables, word) {
-  for (let i = 0; i < syllables.length; i++) {
-    if (/[áéíóú]/.test(syllables[i])) return i;
-  }
-  const last = word.slice(-1).toLowerCase();
-  return 'aoeiuns'.includes(last) ? Math.max(0, syllables.length-2) : syllables.length-1;
+function nextSpeak() {
+  speakIndex++;
+  loadSpeakPhrase();
 }
 
+function prevSpeak() {
+  speakIndex = Math.max(0, speakIndex - 1);
+  loadSpeakPhrase();
+}
 // ── Listen mode ───────────────────────────────────────────────────────────────
 function loadListenPhrase() {
   if (!speakDeck.length) buildSpeakDeck();
