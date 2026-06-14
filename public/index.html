@@ -4332,6 +4332,7 @@ document.getElementById('yoFormInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') checkYoForm();
 });
 
+
 /* ══ SPEAK ══ */
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -4340,55 +4341,22 @@ let speakDeck     = [];
 let speakIndex    = 0;
 let listenIndex   = 0;
 let speakRate     = 0.85;
-
-let selectedVoiceKey = "mx_female"; // ✅ CLEAN: single source of truth
-
+let selectedVoice = null;
 let autoAdvance   = false;
 let autoAdvanceTimer = null;
-
 let speakMode     = 'shadow'; // 'shadow' | 'listen' | 'dictation'
 let showSyllables = false;
 let listenRevealed = false;
 
 // Dictation state
-let dictSource    = 'phrases';
-let dictDifficulty = 'normal';
+let dictSource    = 'phrases'; // 'phrases' | 'vocab' | 'mixed'
+let dictDifficulty = 'normal'; // 'normal' | 'hard'
 let dictDeck      = [];
 let dictIndex     = 0;
 let dictCorrect   = 0;
 let dictWrong     = 0;
 let dictRevealed  = false;
 
-
-// ── Voice loading (UI only - NO browser voices) ─────────────────────────────
-function loadVoices() {
-  const sel = document.getElementById('voiceSelect');
-  sel.innerHTML = '';
-
-  const options = [
-    { label: "Mexico 🇲🇽 Female (Dalia)", value: "mx_female" },
-    { label: "Mexico 🇲🇽 Male (Jorge)", value: "mx_male" },
-    { label: "Chile 🇨🇱 Female (Catalina)", value: "cl_female" },
-    { label: "Chile 🇨🇱 Male (Lorenzo)", value: "cl_male" }
-  ];
-
-  options.forEach(opt => {
-    const el = document.createElement('option');
-    el.value = opt.value;
-    el.textContent = opt.label;
-    sel.appendChild(el);
-  });
-
-  sel.value = selectedVoiceKey;
-}
-
-function onVoiceChange() {
-  const sel = document.getElementById('voiceSelect');
-  selectedVoiceKey = sel.value;
-}
-
-
-// ── Azure voice map ─────────────────────────────────────────────────────────
 const VOICE_MAP = {
   mx_female: "es-MX-DaliaNeural",
   mx_male: "es-MX-JorgeNeural",
@@ -4396,179 +4364,234 @@ const VOICE_MAP = {
   cl_male: "es-CL-LorenzoNeural"
 };
 
-
-// ── TTS CORE (Azure + fallback) ─────────────────────────────────────────────
-async function speak(text) {
-  const azureVoice = VOICE_MAP[selectedVoiceKey] || "es-MX-DaliaNeural";
-
-  try {
-    const res = await fetch("/api/tts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        text,
-        voice: azureVoice
-      })
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("❌ Azure error:", errText);
-      throw new Error(errText);
-    }
-
-    const blob = await res.blob();
-
-    console.log("🎧 Azure blob size:", blob.size);
-
-    if (!blob || blob.size === 0) {
-      throw new Error("Empty audio from Azure");
-    }
-
-    const url = URL.createObjectURL(blob);
-
-    const audio = new Audio(url);
-    audio.preload = "auto";
-
-    audio.onended = () => {
-      URL.revokeObjectURL(url);
+function resolveVoice() {
+  // If Azure-style voice selected (string key system)
+  if (typeof selectedVoice === "string" && VOICE_MAP[selectedVoice]) {
+    return {
+      type: "azure",
+      voice: VOICE_MAP[selectedVoice]
     };
-
-    audio.play().catch(err => {
-      console.warn("⚠️ Audio blocked:", err);
-    });
-
-  } catch (err) {
-    console.warn("❌ Azure failed → fallback", err);
-    fallbackSpeak(text);
   }
+
+  // If browser SpeechSynthesisVoice selected
+  if (selectedVoice instanceof SpeechSynthesisVoice) {
+    return {
+      type: "browser",
+      voice: selectedVoice
+    };
+  }
+
+  // fallback
+  return {
+    type: "browser",
+    voice: null
+  };
 }
 
-
-// ── Browser fallback (SAFE, no voice dependency) ────────────────────────────
-function fallbackSpeak(text) {
+// ── Voice loading ─────────────────────────────────────────────────────────────
+function loadVoices() {
   const voices = speechSynthesis.getVoices();
+  if (!voices.length) return;
 
-  const voice =
-    voices.find(v =>
-      v.lang.startsWith("es")
-    ) || null;
+  const sel = document.getElementById('voiceSelect');
+  sel.innerHTML = '';
 
-  const utterance = new SpeechSynthesisUtterance(text);
+  function scoreVoice(v) {
+    let score = 0;
 
-  if (voice) {
-    utterance.voice = voice;
+    const name = v.name.toLowerCase();
+    const lang = v.lang.toLowerCase();
+
+    // Prefer Mexican Spanish first
+    if (lang === 'es-mx') score += 1000;
+    else if (lang === 'es-419') score += 900;
+    else if (lang === 'es-us') score += 850;
+    else if (['es-co','es-ar','es-pe','es-cl'].includes(lang)) score += 800;
+    else if (lang.startsWith('es-')) score += 500;
+
+    // Strong preference for modern Apple voices
+    if (name.includes('siri')) score += 5000;
+    if (name.includes('neural')) score += 4000;
+    if (name.includes('premium')) score += 3000;
+    if (name.includes('enhanced')) score += 2000;
+
+    // Favourites
+    if (name.includes('paulina')) score += 500;
+    if (name.includes('monica')) score += 400;
+    if (name.includes('jorge')) score += 400;
+
+    // Apple local voices tend to be higher quality
+    if (v.localService) score += 100;
+
+    return score;
   }
 
-  utterance.lang = "es-ES";
+  const spanishVoices = voices
+    .filter(v => v.lang.toLowerCase().startsWith('es'))
+    .sort((a, b) => scoreVoice(b) - scoreVoice(a));
 
-  speechSynthesis.speak(utterance);
+  const seen = new Set();
+
+  const unique = spanishVoices.filter(v => {
+    const key = `${v.name}|${v.lang}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (!unique.length) {
+    const opt = document.createElement('option');
+    opt.textContent = 'No Spanish voices found';
+    opt.disabled = true;
+    sel.appendChild(opt);
+    return;
+  }
+
+  unique.forEach((v, i) => {
+    const opt = document.createElement('option');
+
+    const region = v.lang.includes('-')
+      ? v.lang.split('-')[1]
+      : v.lang;
+
+    opt.value = i;
+    opt.textContent = `${v.name} (${region})`;
+
+    sel.appendChild(opt);
+  });
+
+  sel._voices = unique;
+
+  // Pick best-scoring voice automatically
+  selectedVoice = unique[0];
+  sel.value = "0";
+
+  console.log(
+    "Spanish voices ranked:",
+    unique.map(v => ({
+      name: v.name,
+      lang: v.lang,
+      local: v.localService,
+      score: scoreVoice(v)
+    }))
+  );
 }
 
+speechSynthesis.onvoiceschanged = loadVoices;
+setTimeout(loadVoices, 250);
 
-// ── Speed control ────────────────────────────────────────────────────────────
+function onVoiceChange() {
+  const sel = document.getElementById('voiceSelect');
+  if (sel._voices) selectedVoice = sel._voices[parseInt(sel.value)] || null;
+}
+
+// ── TTS core ──────────────────────────────────────────────────────────────────
+async function speak(text, rate, onEnd) {
+  const resolved = resolveVoice();
+
+  // ── AZURE PATH ─────────────────────────────────────────────
+  if (resolved.type === "azure") {
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          voice: resolved.voice
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      const audio = new Audio(url);
+
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        if (onEnd) onEnd();
+      };
+
+      audio.play().catch(() => fallbackSpeak(text));
+
+      return;
+    } catch (err) {
+      console.warn("Azure failed → fallback", err);
+      fallbackSpeak(text);
+      return;
+    }
+  }
+
+  // ── BROWSER PATH ───────────────────────────────────────────
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "es-MX";
+  utter.rate = rate || speakRate;
+
+  if (resolved.voice) utter.voice = resolved.voice;
+
+  if (onEnd) utter.onend = onEnd;
+
+  speechSynthesis.speak(utter);
+}
+
 function setSpeed(rate) {
   speakRate = rate;
-
   document.querySelectorAll('[data-speed]').forEach(b => {
-    b.classList.toggle(
-      'active',
-      parseFloat(b.dataset.speed) === rate
-    );
+    b.classList.toggle('active', parseFloat(b.dataset.speed) === rate);
   });
 }
 
-
-// ── Auto-advance ─────────────────────────────────────────────────────────────
 function toggleAutoAdvance() {
   autoAdvance = !autoAdvance;
-
   const tog  = document.getElementById('autoAdvanceToggle');
   const knob = document.getElementById('autoAdvanceKnob');
-
-  tog.style.background = autoAdvance
-    ? 'var(--terracotta)'
-    : 'var(--border)';
-
-  knob.style.left = autoAdvance ? '18px' : '2px';
-
+  tog.style.background  = autoAdvance ? 'var(--terracotta)' : 'var(--border)';
+  knob.style.left       = autoAdvance ? '18px' : '2px';
   if (!autoAdvance) clearAutoAdvance();
 }
-
 function clearAutoAdvance() {
-  if (autoAdvanceTimer) {
-    clearTimeout(autoAdvanceTimer);
-    autoAdvanceTimer = null;
-  }
+  if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
 }
-
 function scheduleAutoAdvance(nextFn, playFn) {
   clearAutoAdvance();
-
-  autoAdvanceTimer = setTimeout(() => {
-    nextFn();
-    setTimeout(playFn, 500);
-  }, 1800);
+  autoAdvanceTimer = setTimeout(() => { nextFn(); setTimeout(playFn, 500); }, 1800);
 }
 
-
-// ── Mode switching ───────────────────────────────────────────────────────────
+// ── Mode switching ────────────────────────────────────────────────────────────
 function setSpeakMode(mode) {
   speakMode = mode;
-
   document.querySelectorAll('[data-speakmode]').forEach(b => {
     b.classList.toggle('active', b.dataset.speakmode === mode);
   });
-
   document.getElementById('shadowModePanel').style.display    = mode === 'shadow'    ? 'block' : 'none';
   document.getElementById('listenModePanel').style.display    = mode === 'listen'    ? 'block' : 'none';
   document.getElementById('dictationModePanel').style.display = mode === 'dictation' ? 'block' : 'none';
-
+  // Category pills only relevant for shadow/listen
   document.getElementById('speakCatPills').style.display = mode === 'dictation' ? 'none' : '';
-
   speechSynthesis.cancel();
   clearAutoAdvance();
-
-  if (mode === 'shadow') loadSpeakPhrase();
-  if (mode === 'listen') {
-    loadListenPhrase();
-    setTimeout(playListenPhrase, 400);
-  }
-  if (mode === 'dictation') {
-    buildDictDeck();
-    loadDictPhrase();
-  }
+  if (mode === 'shadow')    { loadSpeakPhrase(); }
+  if (mode === 'listen')    { loadListenPhrase(); setTimeout(playListenPhrase, 400); }
+  if (mode === 'dictation') { buildDictDeck(); loadDictPhrase(); }
 }
 
-
-// ── Category pills ───────────────────────────────────────────────────────────
+// ── Category pills ────────────────────────────────────────────────────────────
 function buildSpeakCatPills() {
   const row = document.getElementById('speakCatPills');
   row.innerHTML = '';
-
   Object.keys(SPEAK_PHRASES).forEach(cat => {
     const p = document.createElement('div');
     p.className = 'pill' + (cat === speakCat ? ' active' : '');
     p.textContent = cat;
-
     p.onclick = () => {
-      speakCat = cat;
-      speakIndex = 0;
-      listenIndex = 0;
-
-      buildSpeakCatPills();
-      buildSpeakDeck();
-
-      if (speakMode === 'listen') {
-        loadListenPhrase();
-        setTimeout(playListenPhrase, 400);
-      } else {
-        loadSpeakPhrase();
-      }
+      speakCat = cat; speakIndex = 0; listenIndex = 0;
+      buildSpeakCatPills(); buildSpeakDeck();
+      if (speakMode === 'listen') { loadListenPhrase(); setTimeout(playListenPhrase, 400); }
+      else loadSpeakPhrase();
     };
-
     row.appendChild(p);
   });
 }
@@ -4579,63 +4602,102 @@ function buildSpeakDeck() {
 
 function shuffleSpeakDeck() {
   speakDeck = shuffle([...(SPEAK_PHRASES[speakCat] || [])]);
-  speakIndex = 0;
-  listenIndex = 0;
-
-  if (speakMode === 'listen') {
-    loadListenPhrase();
-    setTimeout(playListenPhrase, 300);
-  } else {
-    loadSpeakPhrase();
-  }
+  speakIndex = 0; listenIndex = 0;
+  if (speakMode === 'listen') { loadListenPhrase(); setTimeout(playListenPhrase, 300); }
+  else loadSpeakPhrase();
 }
 
-
-// ── Shadow mode ─────────────────────────────────────────────────────────────
+// ── Shadow mode ───────────────────────────────────────────────────────────────
 function loadSpeakPhrase() {
   if (!speakDeck.length) buildSpeakDeck();
   if (!speakDeck.length) return;
-
   const ph = speakDeck[speakIndex % speakDeck.length];
-
   document.getElementById('speakPhrase').textContent      = ph.es;
   document.getElementById('speakTranslation').textContent = ph.en;
   document.getElementById('speakPhonetic').textContent    = ph.phonetic ? '📢 ' + ph.phonetic : '';
   document.getElementById('speakNotes').textContent       = ph.notes || '';
-  document.getElementById('speakCounter').textContent     =
-    `Phrase ${(speakIndex % speakDeck.length)+1} of ${speakDeck.length}`;
-
+  document.getElementById('speakCounter').textContent     = `Phrase ${(speakIndex % speakDeck.length)+1} of ${speakDeck.length}`;
   showSyllables = false;
   document.getElementById('syllableBreakdown').style.display = 'none';
   document.getElementById('syllableBtn').textContent = 'Show syllable breakdown';
-
   clearAutoAdvance();
 }
 
 function playSpeakPhrase(repeat) {
   const phrase = document.getElementById('speakPhrase').textContent;
-
   if (repeat) {
-    speak(phrase);
-    setTimeout(() => speak(phrase), 600);
-    setTimeout(() => speak(phrase), 1200);
+    speak(phrase, speakRate, () => setTimeout(() =>
+      speak(phrase, speakRate, () => setTimeout(() =>
+        speak(phrase, speakRate), 600)), 600));
   } else {
-    speak(phrase);
-    if (autoAdvance) {
-      scheduleAutoAdvance(nextSpeak, playSpeakPhrase);
-    }
+    speak(phrase, speakRate, () => {
+      if (autoAdvance) scheduleAutoAdvance(nextSpeak, playSpeakPhrase);
+    });
   }
 }
 
-function nextSpeak() {
-  speakIndex++;
-  loadSpeakPhrase();
+function nextSpeak() { speakIndex++; loadSpeakPhrase(); speechSynthesis.cancel(); }
+function prevSpeak() { speakIndex = Math.max(0, speakIndex-1); loadSpeakPhrase(); speechSynthesis.cancel(); }
+
+// ── Syllable breakdown ────────────────────────────────────────────────────────
+function toggleSyllables() {
+  showSyllables = !showSyllables;
+  const box = document.getElementById('syllableBreakdown');
+  const btn = document.getElementById('syllableBtn');
+  if (showSyllables) {
+    const ph = speakDeck[speakIndex % speakDeck.length];
+    box.innerHTML = buildSyllableBreakdown(ph.es);
+    box.style.display = 'block';
+    btn.textContent = 'Hide breakdown';
+  } else {
+    box.style.display = 'none';
+    btn.textContent = 'Show syllable breakdown';
+  }
 }
 
-function prevSpeak() {
-  speakIndex = Math.max(0, speakIndex - 1);
-  loadSpeakPhrase();
+function buildSyllableBreakdown(text) {
+  const words = text.replace(/[¿¡.,;:!?]/g, '').split(/\s+/);
+  return words.map(word => {
+    const syllables = syllabify(word);
+    const stressed  = getStressIndex(syllables, word);
+    return syllables.map((s, i) =>
+      `<span style="${i===stressed?'font-weight:700;font-size:16px;color:var(--terracotta)':'font-size:15px;opacity:0.75'}">${s}</span>`
+    ).join('<span style="opacity:0.4;">·</span>');
+  }).join('&nbsp;&nbsp;');
 }
+
+function syllabify(word) {
+  const w = word.toLowerCase();
+  const vowels = 'aeiouáéíóúü';
+  const syllables = [];
+  let current = '';
+  let i = 0;
+  while (i < w.length) {
+    current += w[i];
+    const isV = vowels.includes(w[i]);
+    const nV  = i+1 < w.length && vowels.includes(w[i+1]);
+    if (isV) {
+      const weak = 'iuíú';
+      if (nV && (weak.includes(w[i]) || weak.includes(w[i+1]))) { current += w[i+1]; i++; }
+      if (i+1 < w.length && !vowels.includes(w[i+1])) {
+        if (i+2 < w.length && !vowels.includes(w[i+2]) && i+3 < w.length && vowels.includes(w[i+3])) { current += w[i+1]; i++; }
+        syllables.push(current); current = '';
+      }
+    }
+    i++;
+  }
+  if (current) syllables.push(current);
+  return syllables.length ? syllables : [word];
+}
+
+function getStressIndex(syllables, word) {
+  for (let i = 0; i < syllables.length; i++) {
+    if (/[áéíóú]/.test(syllables[i])) return i;
+  }
+  const last = word.slice(-1).toLowerCase();
+  return 'aoeiuns'.includes(last) ? Math.max(0, syllables.length-2) : syllables.length-1;
+}
+
 // ── Listen mode ───────────────────────────────────────────────────────────────
 function loadListenPhrase() {
   if (!speakDeck.length) buildSpeakDeck();
