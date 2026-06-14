@@ -722,6 +722,7 @@
       <button class="mode-btn active" data-mode="flash">Flashcard</button>
       <button class="mode-btn" data-mode="rapid">Rapid fire</button>
       <button class="mode-btn" data-mode="fillin">Fill-in</button>
+      <button class="mode-btn" data-mode="translate">Translate</button>
     </div>
   </div>
 
@@ -845,6 +846,41 @@
 
     <div style="display:flex;gap:8px;justify-content:center;margin-top:0.75rem;">
       <button class="nav-btn" onclick="skipFillIn()">Skip →</button>
+    </div>
+  </div>
+
+  <!-- Translate mode -->
+  <div id="translateMode" style="display:none;">
+    <div class="tip-box" style="margin-bottom:0.75rem;font-size:12px;">
+      Read the English sentence and type the full Spanish translation. Harder than fill-in — no blanks, no hints. Pure production.
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-muted);margin-bottom:0.5rem;">
+      <span id="translateCounter">1 / 20</span>
+      <div class="mode-toggle" id="translateDiffToggle">
+        <button class="mode-btn active" data-transdiff="normal" onclick="setTranslateDiff('normal')">Hint</button>
+        <button class="mode-btn"        data-transdiff="hard"   onclick="setTranslateDiff('hard')">No hint</button>
+      </div>
+      <span id="translateScore">✓ 0  ✗ 0</span>
+    </div>
+
+    <div class="card" style="padding:1.25rem;margin-bottom:0.75rem;min-height:80px;">
+      <div id="translateType"     style="font-size:11px;letter-spacing:0.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;"></div>
+      <div id="translateEnglish"  style="font-size:19px;font-weight:700;line-height:1.4;color:var(--header);"></div>
+      <div id="translateHint"     style="font-size:12px;color:var(--text-muted);margin-top:6px;font-style:italic;"></div>
+    </div>
+
+    <div class="rapid-input-wrap">
+      <input class="rapid-input" id="translateInput" type="text"
+        placeholder="Type the Spanish translation…"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button class="submit-btn" onclick="checkTranslate()">→</button>
+    </div>
+    <div class="feedback-msg" id="translateFeedback"></div>
+    <div id="translateAnswer" style="display:none;background:var(--primary-light);border-left:3px solid var(--primary);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:0.6rem 1rem;font-size:14px;font-weight:600;color:var(--header);margin-top:0.5rem;"></div>
+
+    <div style="text-align:center;margin-top:0.5rem;">
+      <button class="nav-btn" onclick="skipTranslate()" style="font-size:12px;">Skip →</button>
     </div>
   </div>
 </section>
@@ -1256,6 +1292,14 @@
   <div class="section-head">
     <div class="section-title">Your progress</div>
     <button class="nav-btn" onclick="resetProgress()" style="font-size:11px;padding:4px 10px;color:var(--error);">Reset</button>
+  </div>
+
+  <!-- What next suggestion card -->
+  <div id="whatNextCard" class="card" style="padding:1.1rem 1.25rem;margin-bottom:1rem;border-left:4px solid var(--primary);display:none;">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--primary);font-weight:700;margin-bottom:6px;">📍 What to study next</div>
+    <div id="whatNextText" style="font-size:14px;font-weight:600;color:var(--header);margin-bottom:4px;"></div>
+    <div id="whatNextReason" style="font-size:12px;color:var(--text-muted);margin-bottom:0.75rem;"></div>
+    <button id="whatNextBtn" class="submit-btn" style="padding:7px 16px;font-size:13px;" onclick="followWhatNext()"></button>
   </div>
 
   <div class="stats-grid">
@@ -1835,160 +1879,241 @@ const TENSES = {
 
 const SPEAK_PHRASES = {
 
-"Greetings": [
-  {es:"¿Cómo estás?",en:"How are you?",phonetic:"KO-mo es-TAS",notes:"Informal — use with friends. Formal: ¿Cómo está usted?"},
-  {es:"Mucho gusto en conocerte.",en:"Nice to meet you.",phonetic:"MOO-cho GOOS-to",notes:"Gusto = pleasure. The T is crisp, not soft."},
-  {es:"¿De dónde eres?",en:"Where are you from?",phonetic:"de DON-de E-res",notes:"Informal. Formal: ¿De dónde es usted?"},
-  {es:"¿Cómo te llamas?",en:"What is your name?",phonetic:"KO-mo te YA-mas",notes:"LL sounds like Y in Latin America, not the Spanish lisp."},
-  {es:"Buenos días, ¿cómo le va?",en:"Good morning, how are you?",phonetic:"BWE-nos DI-as",notes:"Le va = it goes for you. Formal register."},
-  {es:"Encantado de conocerte.",en:"Delighted to meet you.",phonetic:"en-kan-TA-do",notes:"Say en-kan-TA-do, not en-CHAN-ta-do."},
-  {es:"¿Qué hay de nuevo?",en:"What's new?",phonetic:"ke AI de NWE-vo",notes:"Casual greeting. Hay = there is (sounds like 'eye')."},
-  {es:"¿Todo bien?",en:"All good?",phonetic:"TO-do BJEN",notes:"Very common informal check-in. Reply: Sí, todo bien."},
-  {es:"Igualmente.",en:"Likewise.",phonetic:"i-gwal-MEN-te",notes:"Standard response to mucho gusto."},
-  {es:"Que tengas un buen día.",en:"Have a good day.",phonetic:"ke TEN-gas oon BWEN DI-a",notes:"Subjunctive que + tengas. Very natural farewell."}
+"Greetings & Everyday": [
+{es:"¿Cómo estás?",en:"How are you?",phonetic:"KO-mo es-TAS",notes:"Informal — use with friends. Formal: ¿Cómo está usted?"},
+{es:"Mucho gusto en conocerte.",en:"Nice to meet you.",phonetic:"MOO-cho GOOS-to",notes:"Gusto = pleasure. The T is crisp, not soft."},
+{es:"¿De dónde eres?",en:"Where are you from?",phonetic:"de DON-de E-res",notes:"Informal. Formal: ¿De dónde es usted?"},
+{es:"¿Cómo te llamas?",en:"What is your name?",phonetic:"KO-mo te YA-mas",notes:"LL sounds like Y in Latin America, not the Spanish lisp."},
+{es:"Buenos días, ¿cómo le va?",en:"Good morning, how are you?",phonetic:"BWE-nos DI-as",notes:"Le va = it goes for you. Formal register."},
+{es:"Encantado de conocerte.",en:"Delighted to meet you.",phonetic:"en-kan-TA-do",notes:"Say en-kan-TA-do, not en-CHAN-ta-do."},
+{es:"¿Qué hay de nuevo?",en:"What's new?",phonetic:"ke AI de NWE-vo",notes:"Casual greeting. Hay = there is (sounds like 'eye')."},
+{es:"¿Todo bien?",en:"All good?",phonetic:"TO-do BJEN",notes:"Very common informal check-in. Reply: Sí, todo bien."},
+{es:"Igualmente.",en:"Likewise.",phonetic:"i-gwal-MEN-te",notes:"Standard response to mucho gusto."},
+{es:"Que tengas un buen día.",en:"Have a good day.",phonetic:"ke TEN-gas oon BWEN DI-a",notes:"Subjunctive que + tengas. Very natural farewell."},
+{es:"La verdad es que no lo sé.",en:"The truth is I do not know.",phonetic:"la ver-DAD es ke no lo se",notes:"Very natural filler phrase. Much better than just 'no sé'."},
+{es:"Me parece que sí.",en:"I think so / it seems like yes.",phonetic:"me pa-RE-se ke si",notes:"Softer than creo que sí. Shows thoughtful uncertainty."},
+{es:"Depende de lo que tengas en mente.",en:"It depends on what you have in mind.",phonetic:"de-PEN-de de lo ke TEN-gas",notes:"Tengas = subjunctive. Natural conditional phrasing."},
+{es:"¿Qué te parece si vamos mañana?",en:"What do you think if we go tomorrow?",phonetic:"ke te pa-RE-se si VA-mos",notes:"Qué te parece = what do you think. Very common invitation form."},
+{es:"No te preocupes, todo va a salir bien.",en:"Don't worry, everything will work out.",phonetic:"no te pre-o-KU-pes",notes:"Preocupes: subjunctive in negative command. No te + subj."},
+{es:"Por cierto, ¿ya viste las noticias?",en:"By the way, did you see the news?",phonetic:"por SJER-to ya VIS-te",notes:"Por cierto = by the way. Viste = preterite of ver."},
+{es:"En fin, así son las cosas.",en:"Anyway, that is how things are.",phonetic:"en fin a-SI son las KO-sas",notes:"En fin = resignation marker. Very Spanish/LatAm expression."},
+{es:"¿No crees que exageras un poco?",en:"Don't you think you're exaggerating a bit?",phonetic:"no KRE-es ke ek-sa-HE-ras",notes:"Exageras: the G before E = H. ek-sa-HE-ras."},
+{es:"Lo que pasa es que estoy muy ocupado.",en:"The thing is I am very busy.",phonetic:"lo ke PA-sa es ke es-TOI",notes:"Lo que pasa es que = the thing is. Essential spoken connector."},
+{es:"A ver si nos vemos pronto.",en:"Let us see if we see each other soon.",phonetic:"a VER si nos VE-mos",notes:"A ver si = let's see if / hopefully. Very common in conversation."},
+{es:"El burro sabe más que tú.",en:"The donkey knows more than you.",phonetic:"el BOO-ro SA-be mas ke too",notes:"B vs V drill: burro (B), sabe (B). In Spanish both B and V = B sound."},
+{es:"La lluvia en Sevilla es una maravilla.",en:"The rain in Seville is a wonder.",phonetic:"la YOO-vja en se-VI-ya",notes:"LL = Y in LatAm. Note also: Sevilla's LL = Y."},
+{es:"Jorge y Julio juegan al fútbol.",en:"Jorge and Julio play football.",phonetic:"HOR-he i HOO-ljo HWE-gan",notes:"J = H throughout: HOR-he, HOO-ljo. G before vowel = H too."},
+{es:"Quiero que vengas conmigo.",en:"I want you to come with me.",phonetic:"KJER-o ke VEN-gas kon-MI-go",notes:"QU = K (the U is silent). Que = ke. Vengas = subjunctive."},
+{es:"La señora González es generosa.",en:"Mrs González is generous.",phonetic:"la se-NYO-ra gon-SA-les",notes:"Ñ = NY sound. GE = HE (soft). González in LatAm = gon-SA-les."},
+{es:"Hay que hablar con él hoy.",en:"One must speak with him today.",phonetic:"AI ke a-BLAR kon el OI",notes:"H is ALWAYS silent in Spanish. Hay = 'eye', hablar = a-BLAR."},
+{es:"¿Por qué no fuiste ayer?",en:"Why didn't you go yesterday?",phonetic:"por KE no FWIS-te a-YER",notes:"Por qué (why) = two words + accent. Fuiste = preterite of ir."},
+{es:"Me gustan las gambas con ajo.",en:"I like prawns with garlic.",phonetic:"me GOOS-tan las GAM-bas kon A-ho",notes:"Ajo: A-ho. J = H. Gustan (plural subject). Note: gambas = Spain."}
 ],
 
-"Travel & Directions": [
-  {es:"¿Dónde está la estación de metro?",en:"Where is the metro station?",phonetic:"DON-de es-TA la es-ta-SJON",notes:"Estación: stress on the last syllable — es-ta-SJON."},
-  {es:"¿A cuántas cuadras está?",en:"How many blocks away is it?",phonetic:"a KWAN-tas KWA-dras",notes:"Cuadra = city block. Very common in LatAm."},
-  {es:"Siga derecho hasta el semáforo.",en:"Go straight ahead to the traffic light.",phonetic:"SI-ga de-RE-cho",notes:"Siga = imperative of seguir. Derecho = straight."},
-  {es:"¿Cuánto cuesta el taxi al aeropuerto?",en:"How much is a taxi to the airport?",phonetic:"KWAN-to KWES-ta",notes:"Cuesta: the UE is a diphthong — say it fast as one sound."},
-  {es:"¿El autobús para en esta esquina?",en:"Does the bus stop at this corner?",phonetic:"ow-to-BOOS PA-ra",notes:"Para: from parar, to stop. Very flat, short vowels."},
-  {es:"Necesito un boleto de ida y vuelta.",en:"I need a return ticket.",phonetic:"ne-se-SI-to oon bo-LE-to",notes:"Boleto = ticket in LatAm. Billete in Spain."},
-  {es:"¿Cuál es la próxima parada?",en:"What is the next stop?",phonetic:"kwal es la PROK-si-ma",notes:"Próxima: stress on PRÓ-, not -xi-."},
-  {es:"Me bajé en la parada equivocada.",en:"I got off at the wrong stop.",phonetic:"me ba-HE en la pa-RA-da",notes:"Bajé = past tense of bajar. J sounds like English H."},
-  {es:"¿Hay vuelos directos a Lima?",en:"Are there direct flights to Lima?",phonetic:"AI VWE-los di-REK-tos",notes:"Hay sounds like 'eye'. Vuelos = flights."},
-  {es:"Quisiera cambiar mi reserva.",en:"I would like to change my reservation.",phonetic:"ki-SJER-a kam-BJAR",notes:"Quisiera = very polite conditional. Much softer than quiero."}
+"Travel & Transport": [
+{es:"¿Dónde está la estación de metro?",en:"Where is the metro station?",phonetic:"DON-de es-TA la es-ta-SJON",notes:"Estación: stress on the last syllable — es-ta-SJON."},
+{es:"¿A cuántas cuadras está?",en:"How many blocks away is it?",phonetic:"a KWAN-tas KWA-dras",notes:"Cuadra = city block. Very common in LatAm."},
+{es:"Siga derecho hasta el semáforo.",en:"Go straight ahead to the traffic light.",phonetic:"SI-ga de-RE-cho",notes:"Siga = imperative of seguir. Derecho = straight."},
+{es:"¿Cuánto cuesta el taxi al aeropuerto?",en:"How much is a taxi to the airport?",phonetic:"KWAN-to KWES-ta",notes:"Cuesta: the UE is a diphthong — say it fast as one sound."},
+{es:"¿El autobús para en esta esquina?",en:"Does the bus stop at this corner?",phonetic:"ow-to-BOOS PA-ra",notes:"Para: from parar, to stop. Very flat, short vowels."},
+{es:"Necesito un boleto de ida y vuelta.",en:"I need a return ticket.",phonetic:"ne-se-SI-to oon bo-LE-to",notes:"Boleto = ticket in LatAm. Billete in Spain."},
+{es:"¿Cuál es la próxima parada?",en:"What is the next stop?",phonetic:"kwal es la PROK-si-ma",notes:"Próxima: stress on PRÓ-, not -xi-."},
+{es:"Me bajé en la parada equivocada.",en:"I got off at the wrong stop.",phonetic:"me ba-HE en la pa-RA-da",notes:"Bajé = past tense of bajar. J sounds like English H."},
+{es:"¿Hay vuelos directos a Lima?",en:"Are there direct flights to Lima?",phonetic:"AI VWE-los di-REK-tos",notes:"Hay sounds like 'eye'. Vuelos = flights."},
+{es:"Quisiera cambiar mi reserva.",en:"I would like to change my reservation.",phonetic:"ki-SJER-a kam-BJAR",notes:"Quisiera = very polite conditional. Much softer than quiero."},
+{es:"Tengo una reserva a nombre de...",en:"I have a reservation in the name of...",phonetic:"TEN-go OO-na re-SER-va",notes:"Reserva: stress on -SER-. Don't add an H before it."},
+{es:"¿A qué hora es el check-out?",en:"What time is check-out?",phonetic:"a ke O-ra",notes:"Hora: the H is silent. Just say O-ra."},
+{es:"¿Hay conexión a wifi en la habitación?",en:"Is there wifi in the room?",phonetic:"AI ko-NEK-sjon a WI-fi",notes:"Hay sounds like 'eye'. Habitación: a-bi-ta-SJON."},
+{es:"El aire acondicionado no funciona.",en:"The air conditioning is not working.",phonetic:"el AI-re a-kon-di-sjo-NA-do",notes:"Long phrase — break it in two: El aire acondicionado / no funciona."},
+{es:"¿Puede traerme más toallas?",en:"Could you bring me more towels?",phonetic:"PWE-de tra-ER-me mas to-A-yas",notes:"Toallas: to-A-yas. LL = Y sound in LatAm."},
+{es:"¿Podría cambiarme de habitación?",en:"Could I change rooms?",phonetic:"po-DRI-a kam-BJAR-me",notes:"Podría: very polite conditional. po-DRI-a, 4 syllables."},
+{es:"¿Está incluido el desayuno?",en:"Is breakfast included?",phonetic:"es-TA in-klwi-DO el de-sa-YOO-no",notes:"Desayuno = breakfast. De-sa-YU-no, 4 syllables."},
+{es:"Hay un problema con la llave.",en:"There is a problem with the key.",phonetic:"AI oon pro-BLE-ma kon la YA-ve",notes:"Llave: YA-ve. LL = Y. Hay = eye."},
+{es:"¿A qué hora sale el próximo autobús para…?",     en:"What time does the next bus to… leave?",         phonetic:"a ke O-ra SA-le el PROK-si-mo ow-to-BUS PA-ra",   notes:"próximo = next. Fill in the destination."},
+{es:"¿Cuánto tarda en llegar a…?",                   en:"How long does it take to get to…?",              phonetic:"KWAN-to TAR-da en lye-GAR a",                     notes:"tardar en = to take time to."},
+{es:"¿Hay un colectivo que vaya a…?",                en:"Is there a shared minibus going to…?",            phonetic:"ay un ko-LEK-ti-bo ke BA-ya a",                   notes:"colectivo = shared transport. vaya = subjunctive of ir."},
+{es:"¿Cuánto cuesta el boleto de ida y vuelta?",      en:"How much is the return ticket?",                 phonetic:"KWAN-to KWES-ta el bo-LE-to de I-da i BWEL-ta",   notes:"ida y vuelta = return. solo ida = one way."},
+{es:"Me han robado la mochila.",                      en:"My backpack has been stolen.",                   phonetic:"me an ro-BA-do la mo-CHI-la",                      notes:"me han robado = they have stolen from me."},
+{es:"He perdido el pasaporte — ¿qué hago?",          en:"I've lost my passport — what do I do?",          phonetic:"e per-DI-do el pa-sa-POR-te ke A-go",              notes:"he perdido = I have lost. ¿qué hago? = what do I do?"},
+{es:"¿Me puede dar un recibo, por favor?",            en:"Could you give me a receipt, please?",           phonetic:"me PWE-de dar un re-SI-bo por fa-BOR",             notes:"recibo = receipt. Essential for insurance claims."},
+{es:"El precio me parece demasiado alto.",            en:"The price seems too high to me.",                phonetic:"el PRE-syo me pa-RE-se de-ma-SYA-do AL-to",        notes:"parece = seems. Polite negotiation opener."},
+{es:"¿Necesito visado para cruzar la frontera?",      en:"Do I need a visa to cross the border?",          phonetic:"ne-se-SI-to bi-SA-do PA-ra kru-SAR la fron-TE-ra", notes:"visado = visa. frontera = border."},
+{es:"¿Dónde puedo tomar un taxi seguro?",             en:"Where can I get a safe taxi?",                   phonetic:"DON-de PWE-do to-MAR un TAK-si se-GU-ro",         notes:"seguro = safe. Always worth asking."}
 ],
 
-"Food & Ordering": [
-  {es:"¿Qué me recomienda hoy?",en:"What do you recommend today?",phonetic:"ke me re-ko-MJEN-da",notes:"Natural way to open. Recomienda: 5 syllables, stress on MJEN."},
-  {es:"¿Tiene algo sin carne?",en:"Do you have anything without meat?",phonetic:"TJEN-e AL-go sin KAR-ne",notes:"Tiene: TJE is a glide — say it quickly as one syllable."},
-  {es:"Para mí, el ceviche por favor.",en:"For me, the ceviche please.",phonetic:"PA-ra mi el se-VI-che",notes:"C before E/I = S sound in LatAm. Ce-VI-che, not che-VI-che."},
-  {es:"¿Está incluido el servicio?",en:"Is the service charge included?",phonetic:"es-TA in-klwi-DO el ser-VI-sjo",notes:"Servicio: 4 syllables. The C before I = S."},
-  {es:"La cuenta, por favor.",en:"The bill, please.",phonetic:"la KWEN-ta por fa-VOR",notes:"KWEN- is a diphthong. Natural and direct — not rude."},
-  {es:"¿Puedo pagar con tarjeta?",en:"Can I pay by card?",phonetic:"PWE-do pa-GAR kon tar-HE-ta",notes:"Tarjeta: the J = H sound. tar-HE-ta."},
-  {es:"Está delicioso, gracias.",en:"It is delicious, thank you.",phonetic:"es-TA de-li-SJSO-so",notes:"Delicioso: 5 syllables. Final O is short and clear."},
-  {es:"¿Me puede traer más agua?",en:"Can you bring me more water?",phonetic:"me PWE-de tra-ER mas A-gwa",notes:"Agua: the GU = GW sound. A-gwa, not A-ga."},
-  {es:"Soy vegetariano, no como carne.",en:"I am vegetarian, I do not eat meat.",phonetic:"soi ve-he-ta-RJA-no",notes:"Vegetariano: V = B sound in Spanish. ve-he-, not ve-ge-."},
-  {es:"¿Cuál es el plato del día?",en:"What is the dish of the day?",phonetic:"kwal es el PLA-to del DI-a",notes:"Plato: crisp P, short vowels. PLA-to, not PLAA-to."}
+"Food & Drink": [
+{es:"¿Qué me recomienda hoy?",en:"What do you recommend today?",phonetic:"ke me re-ko-MJEN-da",notes:"Natural way to open. Recomienda: 5 syllables, stress on MJEN."},
+{es:"¿Tiene algo sin carne?",en:"Do you have anything without meat?",phonetic:"TJEN-e AL-go sin KAR-ne",notes:"Tiene: TJE is a glide — say it quickly as one syllable."},
+{es:"Para mí, el ceviche por favor.",en:"For me, the ceviche please.",phonetic:"PA-ra mi el se-VI-che",notes:"C before E/I = S sound in LatAm. Ce-VI-che, not che-VI-che."},
+{es:"¿Está incluido el servicio?",en:"Is the service charge included?",phonetic:"es-TA in-klwi-DO el ser-VI-sjo",notes:"Servicio: 4 syllables. The C before I = S."},
+{es:"La cuenta, por favor.",en:"The bill, please.",phonetic:"la KWEN-ta por fa-VOR",notes:"KWEN- is a diphthong. Natural and direct — not rude."},
+{es:"¿Puedo pagar con tarjeta?",en:"Can I pay by card?",phonetic:"PWE-do pa-GAR kon tar-HE-ta",notes:"Tarjeta: the J = H sound. tar-HE-ta."},
+{es:"Está delicioso, gracias.",en:"It is delicious, thank you.",phonetic:"es-TA de-li-SJSO-so",notes:"Delicioso: 5 syllables. Final O is short and clear."},
+{es:"¿Me puede traer más agua?",en:"Can you bring me more water?",phonetic:"me PWE-de tra-ER mas A-gwa",notes:"Agua: the GU = GW sound. A-gwa, not A-ga."},
+{es:"Soy vegetariano, no como carne.",en:"I am vegetarian, I do not eat meat.",phonetic:"soi ve-he-ta-RJA-no",notes:"Vegetariano: V = B sound in Spanish. ve-he-, not ve-ge-."},
+{es:"¿Cuál es el plato del día?",en:"What is the dish of the day?",phonetic:"kwal es el PLA-to del DI-a",notes:"Plato: crisp P, short vowels. PLA-to, not PLAA-to."}
 ],
 
-"At the Hotel": [
-  {es:"Tengo una reserva a nombre de...",en:"I have a reservation in the name of...",phonetic:"TEN-go OO-na re-SER-va",notes:"Reserva: stress on -SER-. Don't add an H before it."},
-  {es:"¿A qué hora es el check-out?",en:"What time is check-out?",phonetic:"a ke O-ra",notes:"Hora: the H is silent. Just say O-ra."},
-  {es:"¿Hay conexión a wifi en la habitación?",en:"Is there wifi in the room?",phonetic:"AI ko-NEK-sjon a WI-fi",notes:"Hay sounds like 'eye'. Habitación: a-bi-ta-SJON."},
-  {es:"El aire acondicionado no funciona.",en:"The air conditioning is not working.",phonetic:"el AI-re a-kon-di-sjo-NA-do",notes:"Long phrase — break it in two: El aire acondicionado / no funciona."},
-  {es:"¿Puede traerme más toallas?",en:"Could you bring me more towels?",phonetic:"PWE-de tra-ER-me mas to-A-yas",notes:"Toallas: to-A-yas. LL = Y sound in LatAm."},
-  {es:"¿Podría cambiarme de habitación?",en:"Could I change rooms?",phonetic:"po-DRI-a kam-BJAR-me",notes:"Podría: very polite conditional. po-DRI-a, 4 syllables."},
-  {es:"¿Está incluido el desayuno?",en:"Is breakfast included?",phonetic:"es-TA in-klwi-DO el de-sa-YOO-no",notes:"Desayuno = breakfast. De-sa-YU-no, 4 syllables."},
-  {es:"Hay un problema con la llave.",en:"There is a problem with the key.",phonetic:"AI oon pro-BLE-ma kon la YA-ve",notes:"Llave: YA-ve. LL = Y. Hay = eye."}
+"Body & Health": [
+{es:"Necesito ayuda, por favor.",en:"I need help, please.",phonetic:"ne-se-SI-to a-YOO-da",notes:"Clear and direct. Raise your voice slightly for urgency."},
+{es:"¿Puede llamar a la policía?",en:"Can you call the police?",phonetic:"PWE-de ya-MAR a la po-li-SI-a",notes:"Policía: 4 syllables. po-li-SI-a."},
+{es:"Me han robado la mochila.",en:"My backpack has been stolen.",phonetic:"me AN ro-BA-do la mo-CHI-la",notes:"Me han robado = they have robbed me (impersonal passive)."},
+{es:"¿Dónde está el hospital más cercano?",en:"Where is the nearest hospital?",phonetic:"mas ser-KA-no",notes:"Cercano: C before A = K sound. ser-KA-no."},
+{es:"Soy alérgico al marisco.",en:"I am allergic to seafood.",phonetic:"soi a-LER-hi-ko al ma-RIS-ko",notes:"Alérgico: stress on LER. The G before I = H sound."},
+{es:"Necesito un médico urgente.",en:"I need a doctor urgently.",phonetic:"ne-se-SI-to oon ME-di-ko",notes:"Médico: stress on ME-. Urgente: oor-HEN-te, G = H."},
+{es:"¿Tiene un botiquín de primeros auxilios?",en:"Do you have a first aid kit?",phonetic:"bo-ti-KIN de pri-ME-ros ow-SI-ljos",notes:"Auxilios: ow-SI-ljos. A longer phrase — stay calm and speak slowly."},
+{es:"Por favor, hable más despacio.",en:"Please speak more slowly.",phonetic:"por fa-VOR A-ble mas des-PA-sjo",notes:"Essential phrase! Hable is the formal imperative of hablar."},
+{es:"No me siento bien — necesito un médico.",          en:"I don't feel well — I need a doctor.",              phonetic:"no me SYEN-to BYEN — ne-se-SI-to un ME-di-ko",   notes:"Direct and clear. Use in hotels, tour offices, anywhere."},
+{es:"¿Dónde está la farmacia más cercana?",            en:"Where is the nearest pharmacy?",                   phonetic:"DON-de es-TA la far-MA-sya mas ser-KA-na",        notes:"más cercana = nearest (feminine)"},
+{es:"Me duele mucho aquí.",                            en:"It hurts a lot here.",                             phonetic:"me DWE-le MU-cho a-KI",                           notes:"Point to the area. me duele = it hurts me."},
+{es:"¿Tiene algo para el dolor de cabeza?",            en:"Do you have something for a headache?",            phonetic:"TYE-ne AL-go PA-ra el do-LOR de ka-BE-sa",        notes:"The most useful pharmacy opener."},
+{es:"Creo que tengo el soroche.",                      en:"I think I have altitude sickness.",                phonetic:"KRE-o ke TEN-go el so-RO-che",                    notes:"soroche = altitude sickness (Andean term). Also: mal de altura."},
+{es:"Soy alérgico a la penicilina.",                   en:"I'm allergic to penicillin.",                     phonetic:"soy a-LER-hi-ko a la pe-ni-si-LI-na",             notes:"alérgico (m) / alérgica (f). Change to whatever applies."},
+{es:"¿Cada cuántas horas debo tomarlo?",               en:"How often should I take it?",                    phonetic:"KA-da KWAN-tas O-ras DE-bo to-MAR-lo",            notes:"debo = I should/must. tomarlo = take it."},
+{es:"¡Llame a una ambulancia, por favor!",             en:"Call an ambulance, please!",                      phonetic:"LYA-me a U-na am-bu-LAN-sya por fa-BOR",          notes:"¡Llame! = imperative (formal). Emergency phrase."},
+{es:"Tengo diarrea y vómitos desde ayer.",             en:"I've had diarrhoea and vomiting since yesterday.", phonetic:"TEN-go dya-RRE-a i BO-mi-tos DES-de a-YER",      notes:"desde ayer = since yesterday."},
+{es:"Necesito aclimatarme antes de hacer trekking.",   en:"I need to acclimatise before trekking.",          phonetic:"ne-se-SI-to a-kli-ma-TAR-me AN-tes de a-SER",     notes:"aclimatarme = reflexive infinitive."}
 ],
 
-"Emergencies & Help": [
-  {es:"Necesito ayuda, por favor.",en:"I need help, please.",phonetic:"ne-se-SI-to a-YOO-da",notes:"Clear and direct. Raise your voice slightly for urgency."},
-  {es:"¿Puede llamar a la policía?",en:"Can you call the police?",phonetic:"PWE-de ya-MAR a la po-li-SI-a",notes:"Policía: 4 syllables. po-li-SI-a."},
-  {es:"Me han robado la mochila.",en:"My backpack has been stolen.",phonetic:"me AN ro-BA-do la mo-CHI-la",notes:"Me han robado = they have robbed me (impersonal passive)."},
-  {es:"¿Dónde está el hospital más cercano?",en:"Where is the nearest hospital?",phonetic:"mas ser-KA-no",notes:"Cercano: C before A = K sound. ser-KA-no."},
-  {es:"Soy alérgico al marisco.",en:"I am allergic to seafood.",phonetic:"soi a-LER-hi-ko al ma-RIS-ko",notes:"Alérgico: stress on LER. The G before I = H sound."},
-  {es:"Necesito un médico urgente.",en:"I need a doctor urgently.",phonetic:"ne-se-SI-to oon ME-di-ko",notes:"Médico: stress on ME-. Urgente: oor-HEN-te, G = H."},
-  {es:"¿Tiene un botiquín de primeros auxilios?",en:"Do you have a first aid kit?",phonetic:"bo-ti-KIN de pri-ME-ros ow-SI-ljos",notes:"Auxilios: ow-SI-ljos. A longer phrase — stay calm and speak slowly."},
-  {es:"Por favor, hable más despacio.",en:"Please speak more slowly.",phonetic:"por fa-VOR A-ble mas des-PA-sjo",notes:"Essential phrase! Hable is the formal imperative of hablar."}
+"Grammar & Structure": [
+{es:"Ayer fui al mercado central.",en:"Yesterday I went to the central market.",phonetic:"a-YER fwi al mer-KA-do",notes:"Fui = preterite of ir. F-WI, one syllable."},
+{es:"Mañana viajaremos a Cusco.",en:"Tomorrow we will travel to Cusco.",phonetic:"ma-NYA-na via-ha-RE-mos",notes:"Viajaremos: 5 syllables. The J = H sound."},
+{es:"Cuando era niño, vivía en el campo.",en:"When I was a child, I lived in the country.",phonetic:"KWAN-do E-ra NI-nyo vi-VI-a",notes:"Two imperfects: era and vivía. Both describe ongoing past states."},
+{es:"¿Podrías hablar más despacio?",en:"Could you speak more slowly?",phonetic:"po-DRI-as a-BLAR",notes:"Podrías: conditional tense. Very polite request form."},
+{es:"Espero que podamos encontrarlo.",en:"I hope we can find it.",phonetic:"es-PE-ro ke po-DA-mos",notes:"Que + subjunctive (podamos). Triggers because of esperar."},
+{es:"He visitado más de cuarenta países.",en:"I have visited more than forty countries.",phonetic:"e vi-si-TA-do",notes:"Present perfect: he + participio. Very natural for life experience."},
+{es:"Llevaba dos horas esperando.",en:"I had been waiting for two hours.",phonetic:"ye-VA-ba dos O-ras",notes:"Pluperfect (imperfect of llevar + gerund). Shows duration in past."},
+{es:"Si tuviera más tiempo, viajaría más.",en:"If I had more time, I would travel more.",phonetic:"si too-VJE-ra mas TJEM-po",notes:"Si + imperfect subjunctive + conditional. Key if-then structure."},
+{es:"Tan pronto como llegue, te llamo.",en:"As soon as I arrive, I will call you.",phonetic:"tan PRON-to KO-mo YE-ge",notes:"Subjunctive after time conjunctions. Llegue = subj. of llegar."},
+{es:"No había nadie cuando llegué.",en:"There was nobody when I arrived.",phonetic:"no a-VI-a NA-dje",notes:"Había (imperfect) sets the background; llegué (preterite) is the event."}
 ],
 
-"Tense Practice": [
-  {es:"Ayer fui al mercado central.",en:"Yesterday I went to the central market.",phonetic:"a-YER fwi al mer-KA-do",notes:"Fui = preterite of ir. F-WI, one syllable."},
-  {es:"Mañana viajaremos a Cusco.",en:"Tomorrow we will travel to Cusco.",phonetic:"ma-NYA-na via-ha-RE-mos",notes:"Viajaremos: 5 syllables. The J = H sound."},
-  {es:"Cuando era niño, vivía en el campo.",en:"When I was a child, I lived in the country.",phonetic:"KWAN-do E-ra NI-nyo vi-VI-a",notes:"Two imperfects: era and vivía. Both describe ongoing past states."},
-  {es:"¿Podrías hablar más despacio?",en:"Could you speak more slowly?",phonetic:"po-DRI-as a-BLAR",notes:"Podrías: conditional tense. Very polite request form."},
-  {es:"Espero que podamos encontrarlo.",en:"I hope we can find it.",phonetic:"es-PE-ro ke po-DA-mos",notes:"Que + subjunctive (podamos). Triggers because of esperar."},
-  {es:"He visitado más de cuarenta países.",en:"I have visited more than forty countries.",phonetic:"e vi-si-TA-do",notes:"Present perfect: he + participio. Very natural for life experience."},
-  {es:"Llevaba dos horas esperando.",en:"I had been waiting for two hours.",phonetic:"ye-VA-ba dos O-ras",notes:"Pluperfect (imperfect of llevar + gerund). Shows duration in past."},
-  {es:"Si tuviera más tiempo, viajaría más.",en:"If I had more time, I would travel more.",phonetic:"si too-VJE-ra mas TJEM-po",notes:"Si + imperfect subjunctive + conditional. Key if-then structure."},
-  {es:"Tan pronto como llegue, te llamo.",en:"As soon as I arrive, I will call you.",phonetic:"tan PRON-to KO-mo YE-ge",notes:"Subjunctive after time conjunctions. Llegue = subj. of llegar."},
-  {es:"No había nadie cuando llegué.",en:"There was nobody when I arrived.",phonetic:"no a-VI-a NA-dje",notes:"Había (imperfect) sets the background; llegué (preterite) is the event."}
+"Nature & the Outdoors": [
+{es:"¿Qué animal es ese que está en el árbol?",        en:"What animal is that one in the tree?",            phonetic:"ke a-ni-MAL es E-se ke es-TA en el AR-bol",        notes:"ese = that one (near them). Point confidently."},
+{es:"¿Cómo se llama ese pájaro?",                     en:"What is that bird called?",                      phonetic:"KO-mo se LYA-ma E-se PA-ha-ro",                   notes:"Works for any animal or plant."},
+{es:"¿Es peligroso acercarse?",                       en:"Is it dangerous to approach?",                   phonetic:"es pe-li-GRO-so a-ser-KAR-se",                    notes:"acercarse = to approach/get closer."},
+{es:"¿Es endémico de esta zona?",                     en:"Is it endemic to this area?",                    phonetic:"es en-DE-mi-ko de ES-ta SO-na",                   notes:"endémico = only found here."},
+{es:"¿Cuál es la mejor época para ver ballenas?",     en:"What's the best time of year to see whales?",    phonetic:"kwal es la me-HOR E-po-ka PA-ra ber ba-LYE-nas",  notes:"época = period/season. Swap ballenas for any wildlife."},
+{es:"¿A qué hora sale la excursión mañana?",          en:"What time does tomorrow's excursion leave?",     phonetic:"a ke O-ra SA-le la eks-kur-SYON ma-NYA-na",       notes:"sale = departs (salir)."},
+{es:"¿Podemos acercarnos más sin asustarlos?",        en:"Can we get closer without scaring them?",        phonetic:"po-DE-mos a-ser-KAR-nos mas sin as-us-TAR-los",   notes:"acercarnos = get closer (us). asustarlos = scare them."},
+{es:"¡Increíble! Nunca había visto algo así.",        en:"Incredible! I'd never seen anything like it.",   phonetic:"in-kre-I-ble NUN-ka a-BI-a BIS-to AL-go a-SI",    notes:"había visto = pluperfect. Shows genuine amazement."},
+{es:"¿Están en peligro de extinción?",                en:"Are they endangered?",                           phonetic:"es-TAN en pe-LI-gro de eks-tin-SYON",              notes:"peligro de extinción = endangered."},
+{es:"¿Qué come normalmente?",                         en:"What does it normally eat?",                     phonetic:"ke KO-me nor-mal-MEN-te",                         notes:"come = eats (comer). normalmente = normally/usually."}
 ],
 
-"Everyday Conversation": [
-  {es:"La verdad es que no lo sé.",en:"The truth is I do not know.",phonetic:"la ver-DAD es ke no lo se",notes:"Very natural filler phrase. Much better than just 'no sé'."},
-  {es:"Me parece que sí.",en:"I think so / it seems like yes.",phonetic:"me pa-RE-se ke si",notes:"Softer than creo que sí. Shows thoughtful uncertainty."},
-  {es:"Depende de lo que tengas en mente.",en:"It depends on what you have in mind.",phonetic:"de-PEN-de de lo ke TEN-gas",notes:"Tengas = subjunctive. Natural conditional phrasing."},
-  {es:"¿Qué te parece si vamos mañana?",en:"What do you think if we go tomorrow?",phonetic:"ke te pa-RE-se si VA-mos",notes:"Qué te parece = what do you think. Very common invitation form."},
-  {es:"No te preocupes, todo va a salir bien.",en:"Don't worry, everything will work out.",phonetic:"no te pre-o-KU-pes",notes:"Preocupes: subjunctive in negative command. No te + subj."},
-  {es:"Por cierto, ¿ya viste las noticias?",en:"By the way, did you see the news?",phonetic:"por SJER-to ya VIS-te",notes:"Por cierto = by the way. Viste = preterite of ver."},
-  {es:"En fin, así son las cosas.",en:"Anyway, that is how things are.",phonetic:"en fin a-SI son las KO-sas",notes:"En fin = resignation marker. Very Spanish/LatAm expression."},
-  {es:"¿No crees que exageras un poco?",en:"Don't you think you're exaggerating a bit?",phonetic:"no KRE-es ke ek-sa-HE-ras",notes:"Exageras: the G before E = H. ek-sa-HE-ras."},
-  {es:"Lo que pasa es que estoy muy ocupado.",en:"The thing is I am very busy.",phonetic:"lo ke PA-sa es ke es-TOI",notes:"Lo que pasa es que = the thing is. Essential spoken connector."},
-  {es:"A ver si nos vemos pronto.",en:"Let us see if we see each other soon.",phonetic:"a VER si nos VE-mos",notes:"A ver si = let's see if / hopefully. Very common in conversation."}
-],
-
-"Pronunciation Focus": [
-  {es:"El burro sabe más que tú.",en:"The donkey knows more than you.",phonetic:"el BOO-ro SA-be mas ke too",notes:"B vs V drill: burro (B), sabe (B). In Spanish both B and V = B sound."},
-  {es:"La lluvia en Sevilla es una maravilla.",en:"The rain in Seville is a wonder.",phonetic:"la YOO-vja en se-VI-ya",notes:"LL = Y in LatAm. Note also: Sevilla's LL = Y."},
-  {es:"Jorge y Julio juegan al fútbol.",en:"Jorge and Julio play football.",phonetic:"HOR-he i HOO-ljo HWE-gan",notes:"J = H throughout: HOR-he, HOO-ljo. G before vowel = H too."},
-  {es:"Quiero que vengas conmigo.",en:"I want you to come with me.",phonetic:"KJER-o ke VEN-gas kon-MI-go",notes:"QU = K (the U is silent). Que = ke. Vengas = subjunctive."},
-  {es:"La señora González es generosa.",en:"Mrs González is generous.",phonetic:"la se-NYO-ra gon-SA-les",notes:"Ñ = NY sound. GE = HE (soft). González in LatAm = gon-SA-les."},
-  {es:"Hay que hablar con él hoy.",en:"One must speak with him today.",phonetic:"AI ke a-BLAR kon el OI",notes:"H is ALWAYS silent in Spanish. Hay = 'eye', hablar = a-BLAR."},
-  {es:"¿Por qué no fuiste ayer?",en:"Why didn't you go yesterday?",phonetic:"por KE no FWIS-te a-YER",notes:"Por qué (why) = two words + accent. Fuiste = preterite of ir."},
-  {es:"Me gustan las gambas con ajo.",en:"I like prawns with garlic.",phonetic:"me GOOS-tan las GAM-bas kon A-ho",notes:"Ajo: A-ho. J = H. Gustan (plural subject). Note: gambas = Spain."}
+"People & Relationships": [
+{es:"¿De dónde es usted?",                           en:"Where are you from?",                            phonetic:"de DON-de es us-TED",                             notes:"usted = formal you. The most common question locals ask travellers."},
+{es:"¿Es la primera vez que viene a…?",              en:"Is this your first time here?",                  phonetic:"es la pri-ME-ra bes ke BYE-ne a",                  notes:"viene = comes (usted). primera vez = first time."},
+{es:"¿Qué le parece nuestro país?",                  en:"What do you think of our country?",              phonetic:"ke le pa-RE-se NWES-tro pa-IS",                   notes:"Answer: Me encanta / Es increíble / Estoy fascinado."},
+{es:"Le traigo la cuenta en un momento.",            en:"I'll bring you the bill in a moment.",           phonetic:"le TRA-i-go la KWEN-ta en un mo-MEN-to",           notes:"le traigo = I'll bring you. Very common from waiters."},
+{es:"No hay de ese — ¿le doy otro?",                 en:"We don't have that one — shall I give you another?", phonetic:"no ay de E-se le doy O-tro",                 notes:"No hay de ese = we don't have that one."},
+{es:"¿Va a querer algo más?",                        en:"Will you want anything else?",                   phonetic:"ba a ke-RER AL-go mas",                           notes:"ir a + querer. Standard waiter/shopkeeper closing question."},
+{es:"Con mucho gusto.",                              en:"With pleasure / you're welcome.",                 phonetic:"kon MU-cho GUS-to",                               notes:"Response to gracias. Warmer than 'de nada'. Very common in Colombia."},
+{es:"Que le vaya bien.",                             en:"Take care / I hope things go well for you.",     phonetic:"ke le BA-ya byen",                               notes:"Warm farewell. vaya = subjunctive of ir. Common across LatAm."},
+{es:"Permiso.",                                      en:"Excuse me (to get past).",                       phonetic:"per-MI-so",                                      notes:"Said when squeezing past someone. Not perdón (that's for apologies)."},
+{es:"¿Necesita ayuda con algo?",                     en:"Do you need help with anything?",                phonetic:"ne-se-SI-ta a-YU-da kon AL-go",                  notes:"What locals say being helpful. ¿necesita? = formal you need?"},
+{es:"¿Cómo le fue?",                                 en:"How did it go? / How was it?",                   phonetic:"KO-mo le fwe",                                   notes:"fue = went (preterite). Informal check-in from anyone you know."},
+{es:"¿Me firma aquí, por favor?",                    en:"Could you sign here, please?",                   phonetic:"me FIR-ma a-KI por fa-BOR",                       notes:"What officials say. firma = signs. Reply: Claro, con mucho gusto."}
 ],
 
 
-  "Medical & Emergencies": [
-    {es:"No me siento bien — necesito un médico.",          en:"I don't feel well — I need a doctor.",              phonetic:"no me SYEN-to BYEN — ne-se-SI-to un ME-di-ko",   notes:"Direct and clear. Use in hotels, tour offices, anywhere."},
-    {es:"¿Dónde está la farmacia más cercana?",            en:"Where is the nearest pharmacy?",                   phonetic:"DON-de es-TA la far-MA-sya mas ser-KA-na",        notes:"más cercana = nearest (feminine)"},
-    {es:"Me duele mucho aquí.",                            en:"It hurts a lot here.",                             phonetic:"me DWE-le MU-cho a-KI",                           notes:"Point to the area. me duele = it hurts me."},
-    {es:"¿Tiene algo para el dolor de cabeza?",            en:"Do you have something for a headache?",            phonetic:"TYE-ne AL-go PA-ra el do-LOR de ka-BE-sa",        notes:"The most useful pharmacy opener."},
-    {es:"Creo que tengo el soroche.",                      en:"I think I have altitude sickness.",                phonetic:"KRE-o ke TEN-go el so-RO-che",                    notes:"soroche = altitude sickness (Andean term). Also: mal de altura."},
-    {es:"Soy alérgico a la penicilina.",                   en:"I'm allergic to penicillin.",                     phonetic:"soy a-LER-hi-ko a la pe-ni-si-LI-na",             notes:"alérgico (m) / alérgica (f). Change to whatever applies."},
-    {es:"¿Cada cuántas horas debo tomarlo?",               en:"How often should I take it?",                    phonetic:"KA-da KWAN-tas O-ras DE-bo to-MAR-lo",            notes:"debo = I should/must. tomarlo = take it."},
-    {es:"¡Llame a una ambulancia, por favor!",             en:"Call an ambulance, please!",                      phonetic:"LYA-me a U-na am-bu-LAN-sya por fa-BOR",          notes:"¡Llame! = imperative (formal). Emergency phrase."},
-    {es:"Tengo diarrea y vómitos desde ayer.",             en:"I've had diarrhoea and vomiting since yesterday.", phonetic:"TEN-go dya-RRE-a i BO-mi-tos DES-de a-YER",      notes:"desde ayer = since yesterday."},
-    {es:"Necesito aclimatarme antes de hacer trekking.",   en:"I need to acclimatise before trekking.",          phonetic:"ne-se-SI-to a-kli-ma-TAR-me AN-tes de a-SER",     notes:"aclimatarme = reflexive infinitive."},
+  "City & Society": [
+    {es:"¿Dónde está la estación de metro más cercana?",         en:"Where is the nearest metro station?",                   phonetic:"DON-de es-TA la es-ta-SYON de ME-tro",           notes:"Very common urban navigation question."},
+    {es:"¿Hay un cajero automático por aquí?",                   en:"Is there an ATM around here?",                          phonetic:"ay un ka-HE-ro ow-to-MA-ti-ko por a-KI",          notes:"cajero automático = ATM. por aquí = around here."},
+    {es:"¿A qué hora cierra el museo?",                          en:"What time does the museum close?",                      phonetic:"a ke O-ra SYE-rra el mu-SE-o",                    notes:"cierra = closes (cerrar). Also: ¿a qué hora abre? = what time does it open?"},
+    {es:"¿Está incluida la propina?",                            en:"Is the tip included?",                                  phonetic:"es-TA in-klwi-DA la pro-PI-na",                   notes:"propina = tip. incluida = included (feminine). Common restaurant question."},
+    {es:"¿Hay wifi disponible aquí?",                            en:"Is there wifi available here?",                         phonetic:"ay WI-fi dis-po-NI-ble a-KI",                     notes:"wifi = wifi. disponible = available. Essential modern question."},
+    {es:"¿Cuál es la contraseña del wifi?",                      en:"What is the wifi password?",                           phonetic:"kwal es la kon-tra-SE-nya del WI-fi",              notes:"contraseña = password. del = of the."},
+    {es:"¿Se puede sacar fotos aquí?",                           en:"Can you take photos here?",                            phonetic:"se PWE-de sa-KAR FO-tos a-KI",                    notes:"se puede = one can / is it possible. sacar fotos = take photos."},
+    {es:"¿Me puede recomendar un buen restaurante cerca?",       en:"Can you recommend a good restaurant nearby?",          phonetic:"me PWE-de re-ko-men-DAR un bwen res-tow-RAN-te",  notes:"recomendar = to recommend. cerca = nearby."},
+    {es:"Estoy buscando la calle…",                              en:"I'm looking for… street.",                             phonetic:"es-TOY bus-KAN-do la KA-lye",                     notes:"buscando = looking for (gerund). calle = street."},
+    {es:"¿Está lejos a pie?",                                    en:"Is it far on foot?",                                   phonetic:"es-TA LE-hos a PYE",                              notes:"a pie = on foot. lejos = far. cerca = near."},
   ],
 
-  "Wildlife & Guided Tours": [
-    {es:"¿Qué animal es ese que está en el árbol?",        en:"What animal is that one in the tree?",            phonetic:"ke a-ni-MAL es E-se ke es-TA en el AR-bol",        notes:"ese = that one (near them). Point confidently."},
-    {es:"¿Cómo se llama ese pájaro?",                     en:"What is that bird called?",                      phonetic:"KO-mo se LYA-ma E-se PA-ha-ro",                   notes:"Works for any animal or plant."},
-    {es:"¿Es peligroso acercarse?",                       en:"Is it dangerous to approach?",                   phonetic:"es pe-li-GRO-so a-ser-KAR-se",                    notes:"acercarse = to approach/get closer."},
-    {es:"¿Es endémico de esta zona?",                     en:"Is it endemic to this area?",                    phonetic:"es en-DE-mi-ko de ES-ta SO-na",                   notes:"endémico = only found here."},
-    {es:"¿Cuál es la mejor época para ver ballenas?",     en:"What's the best time of year to see whales?",    phonetic:"kwal es la me-HOR E-po-ka PA-ra ber ba-LYE-nas",  notes:"época = period/season. Swap ballenas for any wildlife."},
-    {es:"¿A qué hora sale la excursión mañana?",          en:"What time does tomorrow's excursion leave?",     phonetic:"a ke O-ra SA-le la eks-kur-SYON ma-NYA-na",       notes:"sale = departs (salir)."},
-    {es:"¿Podemos acercarnos más sin asustarlos?",        en:"Can we get closer without scaring them?",        phonetic:"po-DE-mos a-ser-KAR-nos mas sin as-us-TAR-los",   notes:"acercarnos = get closer (us). asustarlos = scare them."},
-    {es:"¡Increíble! Nunca había visto algo así.",        en:"Incredible! I'd never seen anything like it.",   phonetic:"in-kre-I-ble NUN-ka a-BI-a BIS-to AL-go a-SI",    notes:"había visto = pluperfect. Shows genuine amazement."},
-    {es:"¿Están en peligro de extinción?",                en:"Are they endangered?",                           phonetic:"es-TAN en pe-LI-gro de eks-tin-SYON",              notes:"peligro de extinción = endangered."},
-    {es:"¿Qué come normalmente?",                         en:"What does it normally eat?",                     phonetic:"ke KO-me nor-mal-MEN-te",                         notes:"come = eats (comer). normalmente = normally/usually."},
+  "Work & Study": [
+    {es:"¿De qué se dedica usted?",                              en:"What do you do for work?",                             phonetic:"de ke se de-DI-ka us-TED",                        notes:"dedicarse a = to be dedicated to / work in. Formal way to ask occupation."},
+    {es:"Trabajo como…",                                         en:"I work as a…",                                        phonetic:"tra-BA-ho KO-mo",                                 notes:"trabajo como + job title. e.g. trabajo como médico/profesora/guía."},
+    {es:"¿Cuánto tiempo lleva en este trabajo?",                en:"How long have you been in this job?",                  phonetic:"KWAN-to TYEM-po LYE-ba en ES-te tra-BA-ho",       notes:"llevar + time = to have been doing for. lleva tres años = has been for 3 years."},
+    {es:"Estoy aprendiendo español para mis viajes.",            en:"I'm learning Spanish for my travels.",                 phonetic:"es-TOY a-pren-DYEN-do es-pa-NYOL PA-ra mis BYA-hes", notes:"aprendiendo = learning (gerund). para mis viajes = for my travels."},
+    {es:"¿Habla inglés?",                                        en:"Do you speak English?",                               phonetic:"A-bla in-GLES",                                   notes:"Simple question, high frequency. habla = speaks (usted)."},
+    {es:"¿Podría hablar más despacio, por favor?",              en:"Could you speak more slowly, please?",                 phonetic:"po-DRI-a a-BLAR mas des-PA-syo",                   notes:"podría = could (conditional). despacio = slowly."},
+    {es:"No lo entiendo bien — ¿me lo puede repetir?",         en:"I don't understand well — can you repeat it?",         phonetic:"no lo en-TYEN-do BYEN me lo PWE-de re-pe-TIR",    notes:"entender = understand. repetir = repeat. Very common for language learners."},
+    {es:"¿Cómo se dice… en español?",                          en:"How do you say… in Spanish?",                          phonetic:"KO-mo se DI-se en es-pa-NYOL",                    notes:"⭐ Essential learner phrase. cómo se dice = how does one say."},
+    {es:"Perdona, me he equivocado.",                           en:"Sorry, I made a mistake.",                             phonetic:"per-DO-na me e e-ki-bo-KA-do",                    notes:"equivocarse = to be wrong/make a mistake. he equivocado = I made a mistake."},
+    {es:"Lo estoy traduciendo en mi cabeza.",                   en:"I'm translating it in my head.",                       phonetic:"lo es-TOY tra-du-SYEN-do en mi ka-BE-sa",          notes:"traducir = to translate. en mi cabeza = in my head. Relatable for learners!"},
   ],
 
-  "Ground Transport & Borders": [
-    {es:"¿A qué hora sale el próximo autobús para…?",     en:"What time does the next bus to… leave?",         phonetic:"a ke O-ra SA-le el PROK-si-mo ow-to-BUS PA-ra",   notes:"próximo = next. Fill in the destination."},
-    {es:"¿Cuánto tarda en llegar a…?",                   en:"How long does it take to get to…?",              phonetic:"KWAN-to TAR-da en lye-GAR a",                     notes:"tardar en = to take time to."},
-    {es:"¿Hay un colectivo que vaya a…?",                en:"Is there a shared minibus going to…?",            phonetic:"ay un ko-LEK-ti-bo ke BA-ya a",                   notes:"colectivo = shared transport. vaya = subjunctive of ir."},
-    {es:"¿Cuánto cuesta el boleto de ida y vuelta?",      en:"How much is the return ticket?",                 phonetic:"KWAN-to KWES-ta el bo-LE-to de I-da i BWEL-ta",   notes:"ida y vuelta = return. solo ida = one way."},
-    {es:"Me han robado la mochila.",                      en:"My backpack has been stolen.",                   phonetic:"me an ro-BA-do la mo-CHI-la",                      notes:"me han robado = they have stolen from me."},
-    {es:"He perdido el pasaporte — ¿qué hago?",          en:"I've lost my passport — what do I do?",          phonetic:"e per-DI-do el pa-sa-POR-te ke A-go",              notes:"he perdido = I have lost. ¿qué hago? = what do I do?"},
-    {es:"¿Me puede dar un recibo, por favor?",            en:"Could you give me a receipt, please?",           phonetic:"me PWE-de dar un re-SI-bo por fa-BOR",             notes:"recibo = receipt. Essential for insurance claims."},
-    {es:"El precio me parece demasiado alto.",            en:"The price seems too high to me.",                phonetic:"el PRE-syo me pa-RE-se de-ma-SYA-do AL-to",        notes:"parece = seems. Polite negotiation opener."},
-    {es:"¿Necesito visado para cruzar la frontera?",      en:"Do I need a visa to cross the border?",          phonetic:"ne-se-SI-to bi-SA-do PA-ra kru-SAR la fron-TE-ra", notes:"visado = visa. frontera = border."},
-    {es:"¿Dónde puedo tomar un taxi seguro?",             en:"Where can I get a safe taxi?",                   phonetic:"DON-de PWE-do to-MAR un TAK-si se-GU-ro",         notes:"seguro = safe. Always worth asking."},
+  "Opinions & Discussion": [
+    {es:"En mi opinión, eso no tiene mucho sentido.",           en:"In my opinion, that doesn't make much sense.",         phonetic:"en mi o-pi-NYON E-so no TYE-ne",                  notes:"en mi opinión = in my opinion. tener sentido = to make sense."},
+    {es:"Estoy de acuerdo contigo.",                            en:"I agree with you.",                                    phonetic:"es-TOY de a-KWER-do kon-TI-go",                   notes:"estar de acuerdo = to agree. contigo = with you (informal)."},
+    {es:"No estoy de acuerdo — creo que…",                     en:"I disagree — I think that…",                          phonetic:"no es-TOY de a-KWER-do KRE-o ke",                 notes:"no estar de acuerdo = to disagree. creo que = I think that."},
+    {es:"Depende del punto de vista.",                          en:"It depends on the point of view.",                    phonetic:"de-PEN-de del PUN-to de BIS-ta",                  notes:"depender = to depend. punto de vista = point of view."},
+    {es:"Es un tema muy complicado.",                           en:"It's a very complicated topic.",                       phonetic:"es un TE-ma muy kom-pli-KA-do",                    notes:"tema = topic/theme. complicado = complicated."},
+    {es:"Hay que verlo desde otra perspectiva.",               en:"You have to look at it from another perspective.",     phonetic:"ay ke BER-lo DES-de O-tra pers-pek-TI-ba",        notes:"hay que + infinitive = one must. perspectiva = perspective."},
+    {es:"Me parece que tienes razón.",                          en:"It seems to me that you're right.",                   phonetic:"me pa-RE-se ke TYE-nes ra-SYON",                  notes:"me parece que = it seems to me that. tener razón = to be right."},
+    {es:"¿Qué opinas sobre esto?",                             en:"What do you think about this?",                       phonetic:"ke o-PI-nas SO-bre ES-to",                         notes:"opinar = to have an opinion. ¿qué opinas? = what do you think?"},
+    {es:"Eso es justo lo que pienso.",                         en:"That is exactly what I think.",                       phonetic:"E-so es HOOS-to lo ke PYEN-so",                    notes:"justo = just/exactly. lo que pienso = what I think."},
+    {es:"Sin embargo, hay que considerar…",                    en:"However, one must consider…",                         phonetic:"sin em-BAR-go ay ke kon-si-de-RAR",                notes:"sin embargo = however/nevertheless. hay que = one must. Very common in discussion."},
   ],
 
-  "Heard in the Wild": [
-    {es:"¿De dónde es usted?",                           en:"Where are you from?",                            phonetic:"de DON-de es us-TED",                             notes:"usted = formal you. The most common question locals ask travellers."},
-    {es:"¿Es la primera vez que viene a…?",              en:"Is this your first time here?",                  phonetic:"es la pri-ME-ra bes ke BYE-ne a",                  notes:"viene = comes (usted). primera vez = first time."},
-    {es:"¿Qué le parece nuestro país?",                  en:"What do you think of our country?",              phonetic:"ke le pa-RE-se NWES-tro pa-IS",                   notes:"Answer: Me encanta / Es increíble / Estoy fascinado."},
-    {es:"Le traigo la cuenta en un momento.",            en:"I'll bring you the bill in a moment.",           phonetic:"le TRA-i-go la KWEN-ta en un mo-MEN-to",           notes:"le traigo = I'll bring you. Very common from waiters."},
-    {es:"No hay de ese — ¿le doy otro?",                 en:"We don't have that one — shall I give you another?", phonetic:"no ay de E-se le doy O-tro",                 notes:"No hay de ese = we don't have that one."},
-    {es:"¿Va a querer algo más?",                        en:"Will you want anything else?",                   phonetic:"ba a ke-RER AL-go mas",                           notes:"ir a + querer. Standard waiter/shopkeeper closing question."},
-    {es:"Con mucho gusto.",                              en:"With pleasure / you're welcome.",                 phonetic:"kon MU-cho GUS-to",                               notes:"Response to gracias. Warmer than 'de nada'. Very common in Colombia."},
-    {es:"Que le vaya bien.",                             en:"Take care / I hope things go well for you.",     phonetic:"ke le BA-ya byen",                               notes:"Warm farewell. vaya = subjunctive of ir. Common across LatAm."},
-    {es:"Permiso.",                                      en:"Excuse me (to get past).",                       phonetic:"per-MI-so",                                      notes:"Said when squeezing past someone. Not perdón (that's for apologies)."},
-    {es:"¿Necesita ayuda con algo?",                     en:"Do you need help with anything?",                phonetic:"ne-se-SI-ta a-YU-da kon AL-go",                  notes:"What locals say being helpful. ¿necesita? = formal you need?"},
-    {es:"¿Cómo le fue?",                                 en:"How did it go? / How was it?",                   phonetic:"KO-mo le fwe",                                   notes:"fue = went (preterite). Informal check-in from anyone you know."},
-    {es:"¿Me firma aquí, por favor?",                    en:"Could you sign here, please?",                   phonetic:"me FIR-ma a-KI por fa-BOR",                       notes:"What officials say. firma = signs. Reply: Claro, con mucho gusto."},
+  "Latin America": [
+    {es:"¿Cuánto tiempo llevan viajando?",                     en:"How long have you been travelling?",                   phonetic:"KWAN-to TYEM-po LYE-ban bya-HAN-do",              notes:"llevar + gerund = to have been doing for. ¿cuánto tiempo llevan? = how long have you been?"},
+    {es:"Este paisaje es impresionante.",                       en:"This landscape is breathtaking.",                      phonetic:"ES-te pa-i-SA-he es im-pre-syo-NAN-te",           notes:"paisaje = landscape/scenery. impresionante = breathtaking/impressive."},
+    {es:"¿De dónde viene esta tradición?",                     en:"Where does this tradition come from?",                 phonetic:"de DON-de BYE-ne ES-ta tra-di-SYON",              notes:"venir de = to come from. tradición = tradition."},
+    {es:"¿Cómo se celebra aquí la Navidad?",                  en:"How is Christmas celebrated here?",                    phonetic:"KO-mo se se-LE-bra a-KI la na-bi-DAD",           notes:"celebrar = to celebrate. se celebra = it is celebrated (passive)."},
+    {es:"Me ha encantado la comida local.",                    en:"I've loved the local food.",                           phonetic:"me a en-kan-TA-do la ko-MI-da lo-KAL",            notes:"me ha encantado = I have loved (present perfect). encantar works like gustar."},
+    {es:"¿Qué significa esta palabra en quechua?",            en:"What does this word mean in Quechua?",                 phonetic:"ke sig-ni-FI-ka ES-ta pa-LA-bra en KE-chua",      notes:"significar = to mean. quechua = indigenous Andean language."},
+    {es:"¿Hay algún lugar que no nos podemos perder?",        en:"Is there anywhere we absolutely can't miss?",          phonetic:"ay al-GUN lu-GAR ke no nos po-DE-mos per-DER",    notes:"perderse = to miss. no podemos perdernos = we can't miss it."},
+    {es:"¿Cuál es el mejor mirador de la ciudad?",           en:"What's the best viewpoint in the city?",               phonetic:"kwal es el me-HOR mi-ra-DOR de la syu-DAD",       notes:"mirador = viewpoint/lookout. mejor = best."},
+    {es:"¿Es seguro caminar de noche por aquí?",             en:"Is it safe to walk around here at night?",             phonetic:"es se-GU-ro ka-mi-NAR de NO-che por a-KI",        notes:"seguro = safe. caminar = to walk. de noche = at night."},
+    {es:"Me gustaría aprender más sobre la cultura local.",  en:"I'd like to learn more about local culture.",          phonetic:"me gus-ta-RI-a a-pren-DER mas SO-bre la kul-TU-ra", notes:"me gustaría = I would like (conditional). aprender más = learn more."},
   ],
 
-};;
+  "Home & Daily Life": [
+    {es:"¿Tiene habitaciones disponibles para esta noche?",    en:"Do you have rooms available for tonight?",             phonetic:"TYE-ne a-bi-ta-SYO-nes dis-po-NI-bles",          notes:"habitación = room. disponible = available. Common at hotels/hostels."},
+    {es:"¿Está incluido el desayuno?",                        en:"Is breakfast included?",                               phonetic:"es-TA in-klwi-DO el de-sa-YU-no",                 notes:"incluido = included. desayuno = breakfast."},
+    {es:"El aire acondicionado no funciona.",                  en:"The air conditioning isn't working.",                  phonetic:"el AI-re a-kon-di-syo-NA-do no fun-SYO-na",       notes:"funcionar = to work/function. Common complaint in hotels."},
+    {es:"¿A qué hora se sirve el desayuno?",                  en:"What time is breakfast served?",                       phonetic:"a ke O-ra se SIR-be el de-sa-YU-no",              notes:"servirse = to be served. a qué hora = at what time."},
+    {es:"Necesito más toallas, por favor.",                    en:"I need more towels, please.",                          phonetic:"ne-se-SI-to mas to-A-lyas por fa-BOR",            notes:"toalla = towel. más = more. Direct and polite request."},
+    {es:"¿Podría cambiarnos de habitación?",                  en:"Could you change our room?",                           phonetic:"po-DRI-a kam-BYAR-nos de a-bi-ta-SYON",           notes:"podría = could (conditional). cambiarnos = change us (to another room)."},
+    {es:"¿Hay lavandería cerca?",                             en:"Is there a laundry nearby?",                           phonetic:"ay la-ban-de-RI-a SER-ka",                        notes:"lavandería = laundry. cerca = nearby. Essential for longer trips."},
+    {es:"¿A qué hora hay que dejar la habitación?",          en:"What time do we have to check out?",                   phonetic:"a ke O-ra ay ke de-HAR la a-bi-ta-SYON",         notes:"dejar la habitación = to leave the room = check out. hay que = one must."},
+  ],
+
+  "Shopping & Money": [
+    {es:"¿Cuánto vale esto?",                                 en:"How much is this?",                                    phonetic:"KWAN-to BA-le ES-to",                             notes:"valer = to be worth/cost. ¿cuánto vale? = how much does it cost? Also: ¿cuánto cuesta?"},
+    {es:"¿Me puede dar un descuento?",                        en:"Can you give me a discount?",                          phonetic:"me PWE-de dar un des-KWEN-to",                    notes:"descuento = discount. Essential for markets and negotiating."},
+    {es:"¿Acepta tarjeta de crédito?",                       en:"Do you accept credit cards?",                          phonetic:"a-SEP-ta tar-HE-ta de KRE-di-to",                notes:"aceptar = to accept. tarjeta de crédito = credit card."},
+    {es:"¿Tiene algo más barato?",                           en:"Do you have something cheaper?",                       phonetic:"TYE-ne AL-go mas ba-RA-to",                       notes:"barato = cheap. más barato = cheaper. Useful when haggling."},
+    {es:"Me lo llevo.",                                       en:"I'll take it.",                                        phonetic:"me lo LYE-bo",                                    notes:"llevar = to take/carry. me lo llevo = I'll take it (lit: I take it with me)."},
+    {es:"¿Me puede hacer un precio especial?",               en:"Can you give me a special price?",                     phonetic:"me PWE-de a-SER un PRE-syo es-pe-SYAL",          notes:"precio especial = special price. Polite way to negotiate in markets."},
+    {es:"¿Dónde está el mercado local?",                     en:"Where is the local market?",                           phonetic:"DON-de es-TA el mer-KA-do lo-KAL",                notes:"mercado = market. local = local. Essential for finding authentic goods."},
+    {es:"¿Tiene cambio de cien soles?",                      en:"Do you have change for a hundred soles?",              phonetic:"TYE-ne KAM-byo de SYEN SO-les",                  notes:"cambio = change. soles = Peruvian currency. Swap for local currency as needed."},
+  ],
+
+  "Emotions & Character": [
+    {es:"Estoy muy emocionado por este viaje.",               en:"I'm very excited about this trip.",                    phonetic:"es-TOY muy e-mo-syo-NA-do por ES-te BYA-he",      notes:"emocionado = excited/moved. Remember: emocionado ≠ emotional in English!"},
+    {es:"Me da un poco de miedo la altura.",                 en:"The height scares me a little.",                       phonetic:"me da un PO-ko de MYED-o la AL-tu-ra",           notes:"me da miedo = it scares me. Like gustar. un poco = a little."},
+    {es:"No me esperaba algo tan bonito.",                   en:"I didn't expect something so beautiful.",              phonetic:"no me es-pe-RA-ba AL-go tan bo-NI-to",           notes:"esperar = to expect/wait. me esperaba = I expected. tan bonito = so beautiful."},
+    {es:"Me siento muy cómodo aquí.",                        en:"I feel very comfortable here.",                        phonetic:"me SYEN-to muy KO-mo-do a-KI",                    notes:"sentirse = to feel. cómodo = comfortable. muy = very."},
+    {es:"Estoy agotado después de tanto caminar.",           en:"I'm exhausted after all that walking.",                phonetic:"es-TOY a-go-TA-do des-PWES de TAN-to ka-mi-NAR", notes:"agotado = exhausted. después de = after. tanto caminar = so much walking."},
+    {es:"Me entristece ver tanta pobreza.",                  en:"It saddens me to see so much poverty.",                phonetic:"me en-tris-TE-se BER TAN-ta po-BRE-sa",          notes:"entristecer = to sadden. me entristece = it saddens me. Like gustar."},
+    {es:"¡Qué alivio llegar a un sitio con ducha caliente!", en:"What a relief to arrive somewhere with a hot shower!", phonetic:"ke a-LI-byo lye-GAR a un SI-tyo kon DU-cha",    notes:"alivio = relief. ducha caliente = hot shower. Very relatable on long trips!"},
+    {es:"Me encanta la forma de ser de la gente de aquí.", en:"I love the personality of the people here.",           phonetic:"me en-KAN-ta la FOR-ma de SER de la HEN-te",     notes:"me encanta = I love. forma de ser = personality/way of being. gente = people."},
+  ],
+
+  "Idioms & Slang": [
+    {es:"¡Qué chévere!",                                     en:"How cool! / Awesome! (LatAm)",                         phonetic:"ke CHE-be-re",                                    notes:"chévere = cool/awesome. Very common in Venezuela, Colombia, Ecuador, Peru."},
+    {es:"¡Qué bacán!",                                       en:"How cool! / Awesome! (South America)",                 phonetic:"ke ba-KAN",                                       notes:"bacán = cool. Used in Chile, Peru, Argentina. Regional variant of chévere."},
+    {es:"No hay mal que por bien no venga.",                 en:"Every cloud has a silver lining.",                     phonetic:"no ay mal ke por BYEN no BEN-ga",                 notes:"Lit: there's no bad that doesn't bring some good. Very common proverb."},
+    {es:"A paso de tortuga.",                                en:"At a snail's pace.",                                   phonetic:"a PA-so de tor-TU-ga",                            notes:"tortuga = turtle/tortoise. Lit: at a turtle's pace. = very slowly."},
+    {es:"Me cayó bien / me cayó mal.",                      en:"I took to them / I didn't take to them.",              phonetic:"me ka-YO BYEN / me ka-YO MAL",                    notes:"caer bien/mal = to strike someone as likeable/unlikeable. First impressions."},
+    {es:"No te rajes.",                                      en:"Don't back out / Don't chicken out.",                  phonetic:"no te RA-hes",                                    notes:"rajarse = to back out/give up. Very colloquial LatAm encouragement."},
+    {es:"Está padre.",                                       en:"It's great / It's awesome. (Mexico)",                  phonetic:"es-TA PA-dre",                                    notes:"padre (Mexico) = great/awesome. padre literally means father!"},
+    {es:"Al mal tiempo, buena cara.",                       en:"Make the best of a bad situation.",                    phonetic:"al mal TYEM-po BWE-na KA-ra",                     notes:"Lit: to bad weather, a good face. = put on a brave face."},
+  ],
+
+};;;
 
 /* ── State ── */
 let progress = JSON.parse(localStorage.getItem('sm_progress') || '{}');
@@ -2663,14 +2788,17 @@ document.querySelectorAll('[data-mode]').forEach(b => {
     currentMode = b.dataset.mode;
     document.querySelectorAll('[data-mode]').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
-    document.getElementById('flashMode').style.display  = currentMode === 'flash'  ? 'block' : 'none';
-    document.getElementById('rapidMode').style.display  = currentMode === 'rapid'  ? 'block' : 'none';
-    document.getElementById('fillInMode').style.display = currentMode === 'fillin' ? 'block' : 'none';
+    document.getElementById('flashMode').style.display     = currentMode === 'flash'     ? 'block' : 'none';
+    document.getElementById('rapidMode').style.display     = currentMode === 'rapid'     ? 'block' : 'none';
+    document.getElementById('fillInMode').style.display    = currentMode === 'fillin'    ? 'block' : 'none';
+    document.getElementById('translateMode').style.display = currentMode === 'translate' ? 'block' : 'none';
     // Direction toggle only meaningful for flash/rapid
-    document.getElementById('directionToggle').style.display = currentMode === 'fillin' ? 'none' : 'flex';
-    document.getElementById('flashStats').style.display = currentMode === 'fillin' ? 'none' : 'flex';
-    if (currentMode === 'rapid')  { rapidScore = 0; rapidStreak = 0; loadRapidQ(); }
-    if (currentMode === 'fillin') { fillInScore = 0; fillInWrong = 0; loadFillIn(); }
+    const hideExtras = currentMode === 'fillin' || currentMode === 'translate';
+    document.getElementById('directionToggle').style.display = hideExtras ? 'none' : 'flex';
+    document.getElementById('flashStats').style.display      = hideExtras ? 'none' : 'flex';
+    if (currentMode === 'rapid')     { rapidScore = 0; rapidStreak = 0; loadRapidQ(); }
+    if (currentMode === 'fillin')    { fillInScore = 0; fillInWrong = 0; loadFillIn(); }
+    if (currentMode === 'translate') { translateScore = 0; translateWrong = 0; loadTranslate(); }
   });
 });
 
@@ -2922,6 +3050,150 @@ function updateFillInScore() {
 
 document.getElementById('fillInInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') checkFillIn();
+});
+
+
+/* ── Translate mode ── */
+let translateScore   = 0;
+let translateWrong   = 0;
+let translateDeck    = [];
+let translateIndex   = 0;
+let translateCurrent = null;
+let translateDiff    = 'normal'; // 'normal' | 'hard'
+let translateRevealed = false;
+
+function setTranslateDiff(diff) {
+  translateDiff = diff;
+  document.querySelectorAll('[data-transdiff]').forEach(b => {
+    b.classList.toggle('active', b.dataset.transdiff === diff);
+  });
+  loadTranslate();
+}
+
+function buildTranslateDeck() {
+  const raw = currentDeck.length ? currentDeck : (VOCAB[currentCat] || []);
+  // Only cards with a useful example sentence (the thing they translate)
+  // For translate mode: show English sentence from ex field, answer is the es word
+  // OR for cards without ex: show English meaning, answer is es word
+  translateDeck = shuffle([...raw].filter(c => c.en && c.en.length >= 2));
+}
+
+function loadTranslate() {
+  buildTranslateDeck();
+  translateIndex = 0;
+  translateScore = 0;
+  translateWrong = 0;
+  updateTranslateScore();
+  showTranslateCard();
+}
+
+function showTranslateCard() {
+  if (!translateDeck.length) return;
+
+  if (translateIndex >= translateDeck.length) {
+    translateIndex = 0;
+    translateDeck = shuffle([...translateDeck]);
+  }
+
+  translateCurrent  = translateDeck[translateIndex];
+  translateRevealed = false;
+  const card        = translateCurrent;
+
+  // Display: English meaning + example sentence for context
+  document.getElementById('translateType').textContent =
+    (card.level ? '[' + card.level + '] ' : '') + (card.type || '');
+  document.getElementById('translateEnglish').textContent = card.en;
+
+  // Hint: the example sentence in Spanish gives structural context
+  // In hard mode, hide it
+  const hintEl = document.getElementById('translateHint');
+  if (translateDiff === 'hard' || !card.hint) {
+    hintEl.textContent = '';
+  } else {
+    hintEl.textContent = '💡 ' + card.hint;
+  }
+
+  const input = document.getElementById('translateInput');
+  input.value = '';
+  input.className = 'rapid-input';
+  document.getElementById('translateFeedback').textContent = '';
+  document.getElementById('translateFeedback').className  = 'feedback-msg';
+  document.getElementById('translateAnswer').style.display = 'none';
+  document.getElementById('translateCounter').textContent  =
+    (translateIndex + 1) + ' / ' + translateDeck.length;
+  input.focus();
+}
+
+function checkTranslate() {
+  if (translateRevealed) { nextTranslate(); return; }
+  const input = document.getElementById('translateInput');
+  const val   = input.value.trim();
+  if (!val) return;
+
+  const card    = translateCurrent;
+  const correct = card.es;
+
+  // Accept the main form or any slash-separated variant
+  const variants = correct.split('/').map(v => v.trim().toLowerCase());
+  const valLower = val.toLowerCase();
+  const ok = variants.some(v => similar(val, v) || valLower === v);
+
+  const fb = document.getElementById('translateFeedback');
+  input.className = 'rapid-input ' + (ok ? 'correct' : 'wrong');
+
+  // Always show the answer after attempting
+  document.getElementById('translateAnswer').textContent = correct + (card.ex ? ' — ' + card.ex : '');
+  document.getElementById('translateAnswer').style.display = 'block';
+  translateRevealed = true;
+
+  if (ok) {
+    fb.textContent = '✓ Correct!';
+    fb.className   = 'feedback-msg correct';
+    translateScore++;
+    bumpStreak();
+    const key = (card._cat || currentCat) + '::' + card.es;
+    if (!progress[key]) progress[key] = {seen:0, correct:0, score:0};
+    progress[key].seen++;
+    progress[key].correct++;
+    progress[key].score = Math.min(5, (progress[key].score || 0) + 1);
+    saveProgress();
+    setTimeout(nextTranslate, 900);
+  } else {
+    fb.innerHTML = '✗ &nbsp;<span style="font-weight:600;color:var(--primary);">' + correct + '</span>';
+    fb.className = 'feedback-msg wrong';
+    translateWrong++;
+    const key = (card._cat || currentCat) + '::' + card.es;
+    if (!progress[key]) progress[key] = {seen:0, correct:0, score:0};
+    progress[key].seen++;
+    progress[key].score = Math.max(0, (progress[key].score || 0) - 1);
+    retryQueue.push({...card});
+    saveProgress();
+    setTimeout(nextTranslate, 1800);
+  }
+  updateTranslateScore();
+}
+
+function skipTranslate() {
+  translateWrong++;
+  updateTranslateScore();
+  nextTranslate();
+}
+
+function nextTranslate() {
+  translateIndex++;
+  translateRevealed = false;
+  showTranslateCard();
+}
+
+function updateTranslateScore() {
+  const total = translateScore + translateWrong;
+  const pct   = total > 0 ? Math.round(translateScore / total * 100) : 0;
+  document.getElementById('translateScore').textContent =
+    '✓ ' + translateScore + '  ✗ ' + translateWrong + (total > 0 ? '  (' + pct + '%)' : '');
+}
+
+document.getElementById('translateInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkTranslate();
 });
 
 /* ── Streak ── */
@@ -4361,93 +4633,38 @@ let dictRevealed  = false;
 function loadVoices() {
   const voices = speechSynthesis.getVoices();
   if (!voices.length) return;
-
   const sel = document.getElementById('voiceSelect');
   sel.innerHTML = '';
-
-  function scoreVoice(v) {
-    let score = 0;
-
-    const name = v.name.toLowerCase();
-    const lang = v.lang.toLowerCase();
-
-    // Prefer Mexican Spanish first
-    if (lang === 'es-mx') score += 1000;
-    else if (lang === 'es-419') score += 900;
-    else if (lang === 'es-us') score += 850;
-    else if (['es-co','es-ar','es-pe','es-cl'].includes(lang)) score += 800;
-    else if (lang.startsWith('es-')) score += 500;
-
-    // Strong preference for modern Apple voices
-    if (name.includes('siri')) score += 5000;
-    if (name.includes('neural')) score += 4000;
-    if (name.includes('premium')) score += 3000;
-    if (name.includes('enhanced')) score += 2000;
-
-    // Favourites
-    if (name.includes('paulina')) score += 500;
-    if (name.includes('monica')) score += 400;
-    if (name.includes('jorge')) score += 400;
-
-    // Apple local voices tend to be higher quality
-    if (v.localService) score += 100;
-
-    return score;
-  }
-
-  const spanishVoices = voices
-    .filter(v => v.lang.toLowerCase().startsWith('es'))
-    .sort((a, b) => scoreVoice(b) - scoreVoice(a));
-
+  const ranked = [
+    ...voices.filter(v => ['es-MX','es-419','es-US','es-CO','es-AR','es-PE','es-CL'].includes(v.lang)),
+    ...voices.filter(v => v.lang.startsWith('es-') && !['es-MX','es-419','es-US','es-CO','es-AR','es-PE','es-CL'].includes(v.lang)),
+    ...voices.filter(v => !v.lang.startsWith('es-') && v.lang.startsWith('es'))
+  ];
   const seen = new Set();
-
-  const unique = spanishVoices.filter(v => {
-    const key = `${v.name}|${v.lang}`;
+  const unique = ranked.filter(v => {
+    const key = v.name + v.lang;
     if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
+    seen.add(key); return true;
   });
-
   if (!unique.length) {
     const opt = document.createElement('option');
-    opt.textContent = 'No Spanish voices found';
+    opt.textContent = 'No Spanish voices — install via OS Language Settings';
     opt.disabled = true;
     sel.appendChild(opt);
     return;
   }
-
   unique.forEach((v, i) => {
     const opt = document.createElement('option');
-
-    const region = v.lang.includes('-')
-      ? v.lang.split('-')[1]
-      : v.lang;
-
+    const region = v.lang.includes('-') ? v.lang.split('-')[1] : v.lang;
     opt.value = i;
-    opt.textContent = `${v.name} (${region})`;
-
+    opt.textContent = v.lang.startsWith('es-') ? `${v.name} (${region})` : v.name;
     sel.appendChild(opt);
   });
-
   sel._voices = unique;
-
-  // Pick best-scoring voice automatically
   selectedVoice = unique[0];
-  sel.value = "0";
-
-  console.log(
-    "Spanish voices ranked:",
-    unique.map(v => ({
-      name: v.name,
-      lang: v.lang,
-      local: v.localService,
-      score: scoreVoice(v)
-    }))
-  );
 }
-
 speechSynthesis.onvoiceschanged = loadVoices;
-setTimeout(loadVoices, 250);
+setTimeout(loadVoices, 100);
 
 function onVoiceChange() {
   const sel = document.getElementById('voiceSelect');
@@ -4884,6 +5101,157 @@ function resetProgress() {
   loadDeck();
 }
 
+
+// ── What Next suggestion ────────────────────────────────────────────────────
+let whatNextAction = null; // stores what the button should do
+
+function computeWhatNext() {
+  const card    = document.getElementById('whatNextCard');
+  const textEl  = document.getElementById('whatNextText');
+  const reasonEl= document.getElementById('whatNextReason');
+  const btnEl   = document.getElementById('whatNextBtn');
+
+  const allWords  = Object.values(VOCAB).flat();
+  const totalWords= allWords.length;
+  const seenCount = Object.keys(progress).filter(k => progress[k].seen > 0).length;
+  const mastered  = Object.values(progress).filter(p => (p.score||0) >= 4).length;
+  const struggling= Object.values(progress).filter(p => (p.score||0) <= 1 && p.seen > 0).length;
+
+  // Check tense tab usage
+  const hasTensePractice = Object.keys(progress).length > 30;
+
+  // Compute mastery per category
+  const catStats = {};
+  Object.entries(VOCAB).forEach(([cat, words]) => {
+    let seen=0, good=0;
+    words.forEach(w => {
+      const key = cat+'::'+w.es;
+      const p = progress[key];
+      if (p && p.seen > 0) { seen++; if ((p.score||0) >= 3) good++; }
+    });
+    catStats[cat] = { total: words.length, seen, good };
+  });
+
+  // Priority rules — first matching rule wins
+  let suggestion = null;
+
+  // Rule 1: Brand new — fewer than 20 words seen
+  if (seenCount < 20) {
+    suggestion = {
+      text: 'Start with Greetings & Everyday at A1',
+      reason: `You've seen ${seenCount} words so far. The best place to start is high-frequency greetings and phrases at A1 level.`,
+      btn: 'Open Greetings & Everyday →',
+      action: () => { goToVocab('Greetings & Everyday', 'A1'); }
+    };
+  }
+
+  // Rule 2: Many struggling words — needs review
+  else if (struggling > 15) {
+    suggestion = {
+      text: `You have ${struggling} words that need more practice`,
+      reason: 'Words you\'ve seen but keep getting wrong deserve focused drilling before moving on.',
+      btn: '▶ Drill weak words now',
+      action: () => { goToVocab('__weak__', 'All'); }
+    };
+  }
+
+  // Rule 3: A category is very low coverage
+  else {
+    const lowCat = Object.entries(catStats)
+      .filter(([cat, s]) => s.total >= 40 && s.seen < s.total * 0.3)
+      .sort((a,b) => a[1].seen/a[1].total - b[1].seen/b[1].total)[0];
+    if (lowCat) {
+      const [cat, s] = lowCat;
+      const pct = Math.round(s.seen/s.total*100);
+      suggestion = {
+        text: `Explore ${cat}`,
+        reason: `Only ${pct}% of this category explored (${s.seen}/${s.total} words). Good area to build out.`,
+        btn: `Open ${cat} →`,
+        action: () => { goToVocab(cat, 'All'); }
+      };
+    }
+  }
+
+  // Rule 4: Tenses not used yet
+  if (!suggestion && seenCount > 50 && !hasTensePractice) {
+    suggestion = {
+      text: 'Try the Tenses tab — you\'re ready',
+      reason: 'You\'ve built a solid vocabulary base. The Tenses tab drills conjugation and tense choice — the next big step.',
+      btn: 'Open Tenses tab →',
+      action: () => {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        const t = document.querySelector('[data-tab="tenses"]');
+        if (t) { t.classList.add('active'); document.getElementById('tab-tenses').classList.add('active'); }
+      }
+    };
+  }
+
+  // Rule 5: Level up — A1 mostly done
+  if (!suggestion) {
+    const a1Words   = allWords.filter(w => w.level === 'A1');
+    const a1Mastered= a1Words.filter(w => {
+      const cats = Object.keys(VOCAB);
+      for (const cat of cats) {
+        const key = cat+'::'+w.es;
+        if (progress[key] && (progress[key].score||0) >= 3) return true;
+      }
+      return false;
+    }).length;
+    if (a1Mastered > a1Words.length * 0.7) {
+      suggestion = {
+        text: 'Level up to A2 vocabulary',
+        reason: `You've covered ${Math.round(a1Mastered/a1Words.length*100)}% of A1 words well. Time to push into A2.`,
+        btn: 'Drill A2 words →',
+        action: () => { goToVocab('__all__', 'A2'); }
+      };
+    }
+  }
+
+  // Rule 6: Good overall — suggest games for speed
+  if (!suggestion && mastered > 100) {
+    suggestion = {
+      text: 'Challenge your speed with Blitz',
+      reason: `You've mastered ${mastered} words. The Blitz game tests whether you know them fast enough for real conversation.`,
+      btn: 'Open Blitz game →',
+      action: () => {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        const t = document.querySelector('[data-tab="game"]');
+        if (t) { t.classList.add('active'); document.getElementById('tab-game').classList.add('active'); }
+        setTimeout(() => setGameMode('blitz'), 100);
+      }
+    };
+  }
+
+  if (suggestion) {
+    card.style.display = 'block';
+    textEl.textContent   = suggestion.text;
+    reasonEl.textContent = suggestion.reason;
+    btnEl.textContent    = suggestion.btn;
+    whatNextAction = suggestion.action;
+  } else {
+    card.style.display = 'none';
+  }
+}
+
+function followWhatNext() {
+  if (whatNextAction) whatNextAction();
+}
+
+function goToVocab(cat, level) {
+  // Switch to vocab tab
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const t = document.querySelector('[data-tab="vocab"]');
+  if (t) { t.classList.add('active'); document.getElementById('tab-vocab').classList.add('active'); }
+  // Set category and level
+  currentCat   = cat;
+  currentLevel = level;
+  buildCatPills();
+  loadDeck();
+}
+
 function renderProgress() {
   const allWords = Object.values(VOCAB).flat();
   const mastered = Object.values(progress).filter(p => (p.score||0) >= 4).length;
@@ -4919,6 +5287,7 @@ function renderProgress() {
   document.getElementById('reviewList').textContent = reviewWords.length
     ? reviewWords.join(' · ')
     : 'None yet — keep practising!';
+  computeWhatNext();
 }
 
 function resetProgress() {
