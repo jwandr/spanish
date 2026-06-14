@@ -14,12 +14,20 @@ export default async function handler(req, res) {
   const allowedVoices = new Set([
     "es-MX-DaliaNeural",
     "es-MX-JorgeNeural",
-    "es-CL-CatalinaNeural",
-    "es-CL-LorenzoNeural"
+    "es-ES-ElviraNeural",
+    "es-ES-AlvaroNeural",
+    "es-AR-ElenaNeural",
+    "es-AR-TomasNeural",
+    "es-CL-BelénNeural",
+    "es-CL-LorenzoNeural",
+    "es-CO-SalomeNeural",
+    "es-CO-GonzaloNeural",
+    "es-PE-AlexNeural",
+    "es-PE-CamilaNeural",
   ]);
 
   const selectedVoice =
-    allowedVoices.has(voice) ? voice : "es-MX-DaliaNeural";
+    allowedVoices.has(voice) ? voice : "es-MX-JorgeNeural";
 
   const ssml = `
 <speak version="1.0" xml:lang="es-MX">
