@@ -1377,6 +1377,19 @@
   <!-- Personal bests strip -->
   <div id="gameBests" style="display:flex;gap:10px;margin-bottom:0.75rem;font-size:12px;color:var(--text-muted);flex-wrap:wrap;"></div>
 
+  <!-- Stop button — shown only during active games -->
+<div id="gameStopRow" style="display:none;margin-bottom:0.75rem;">
+  <button onclick="stopActiveGame()" style="
+    width:100%;padding:10px;
+    background:var(--error-bg);color:var(--error);
+    border:1.5px solid var(--error);border-radius:var(--radius-sm);
+    font-size:13px;font-weight:700;cursor:pointer;
+    font-family:var(--font);letter-spacing:0.2px;
+    transition:background 0.15s;">
+    ⏹ Stop game
+  </button>
+</div>
+
   <!-- ── LIGHTNING MATCH MODE ── -->
   <div id="lightningPanel">
 
@@ -5497,6 +5510,7 @@ function setGameMode(mode) {
   stopSprint();
   stopBlitz();
   stopEar();
+  setGameStopVisible(false);
   updateGameBests();
 }
 
@@ -5509,6 +5523,55 @@ function updateGameBests() {
   if (gameBests.blitzBest)     parts.push(`🔥 Best: <strong>${gameBests.blitzBest} pts</strong>`);
   if (gameBests.earBest)       parts.push(`🔈 Best: <strong>${gameBests.earBest} pts</strong>`);
   el.innerHTML = parts.join(' &nbsp;·&nbsp; ');
+}
+
+function stopActiveGame() {
+  stopLightning();
+  stopSprint();
+  stopBlitz();
+  stopEar();
+  setGameStopVisible(false);
+
+  // Reset each panel to its start-overlay state
+  document.getElementById('lightningStart').style.display  = 'block';
+  document.getElementById('lightningResult').style.display = 'none';
+  document.getElementById('lightningGrid').innerHTML       = '';
+  document.getElementById('lightningTimer').textContent    = '0.0s';
+  document.getElementById('lightningPairsLeft').textContent = '';
+  document.getElementById('lightningCombo').textContent    = '';
+
+  document.getElementById('sprintStartOverlay').style.display = 'block';
+  document.getElementById('sprintResult').style.display       = 'none';
+  document.getElementById('sprintTimer').textContent          = '30';
+  document.getElementById('sprintScore').textContent          = '0';
+  document.getElementById('sprintStreak').textContent         = '0';
+  document.getElementById('sprintWord').textContent           = 'Ready?';
+  document.getElementById('sprintMeaning').textContent        = 'Tap Start to begin';
+  document.getElementById('sprintCorrectBtn').disabled        = false;
+  document.getElementById('sprintWrongBtn').disabled          = false;
+
+  document.getElementById('blitzStartOverlay').style.display = 'block';
+  document.getElementById('blitzResult').style.display       = 'none';
+  document.getElementById('blitzOptions').innerHTML          = '';
+  document.getElementById('blitzWord').textContent           = 'Ready?';
+  document.getElementById('blitzWordType').textContent       = '';
+  document.getElementById('blitzLevel').textContent          = '';
+  document.getElementById('blitzQCounter').textContent       = `Q 0 / ${BLITZ_Q_TOTAL}`;
+  document.getElementById('blitzScoreDisplay').textContent   = '0 pts';
+  document.getElementById('blitzRingSvg').style.opacity      = '0';
+
+  document.getElementById('earStartOverlay').style.display = 'block';
+  document.getElementById('earResult').style.display       = 'none';
+  document.getElementById('earOptions').innerHTML          = '';
+  document.getElementById('earQCounter').textContent       = `Q 0 / ${EAR_Q_TOTAL}`;
+  document.getElementById('earScoreDisplay').textContent   = '0 pts';
+  document.getElementById('earRingSvg').style.opacity      = '0';
+
+  speechSynthesis.cancel();
+}
+
+function setGameStopVisible(visible) {
+  document.getElementById('gameStopRow').style.display = visible ? 'block' : 'none';
 }
 
 // ── LIGHTNING MATCH ───────────────────────────────────────────────────────────
@@ -5542,6 +5605,7 @@ function startLightningRound() {
   lightningSelected = null;
   lightningTimings  = [];
   lightningActive   = true;
+  setGameStopVisible(true);
 
   renderLightningGrid();
 
@@ -5678,6 +5742,7 @@ function onMatchCardClick(el, pair, side) {
 
 function finishLightning() {
   stopLightning();
+  setGameStopVisible(false);
   const roundMs = performance.now() - lightningStartTime;
   lightningRoundTimes.push(roundMs);
   lightningRound++;
@@ -5753,6 +5818,7 @@ function startSprint() {
   sprintWrong  = 0;
   sprintTimeLeft = 30;
   sprintActive   = true;
+  setGameStopVisible(true);
 
   document.getElementById('sprintStartOverlay').style.display = 'none';
   document.getElementById('sprintResult').style.display       = 'none';
@@ -5870,6 +5936,7 @@ function updateSprintUI() {
 
 function finishSprint() {
   stopSprint();
+  setGameStopVisible(false);
 
   document.getElementById('sprintCorrectBtn').disabled = true;
   document.getElementById('sprintWrongBtn').disabled   = true;
@@ -5997,6 +6064,7 @@ function startBlitz() {
   blitzGeneration = 0;
   blitzRoundLog  = [];
   blitzActive    = true;
+  setGameStopVisible(true);
 
   document.getElementById('blitzStartOverlay').style.display = 'none';
   document.getElementById('blitzResult').style.display       = 'none';
@@ -6292,6 +6360,7 @@ function updateBlitzQCounter() {
 
 function finishBlitz() {
   stopBlitz();
+  setGameStopVisible(false);
 
   const key    = 'blitzBest';
   const isNew  = !gameBests[key] || blitzScore > gameBests[key];
@@ -6429,6 +6498,7 @@ function startEar() {
   earGeneration = 0;
   earRoundLog   = [];
   earActive     = true;
+  setGameStopVisible(true);
 
   document.getElementById('earStartOverlay').style.display = 'none';
   document.getElementById('earResult').style.display       = 'none';
@@ -6666,6 +6736,7 @@ function updateEarScoreDisplay() {
 
 function finishEar() {
   stopEar();
+  setGameStopVisible(false);
 
   const key   = 'earBest';
   const isNew = !gameBests[key] || earScore > gameBests[key];
