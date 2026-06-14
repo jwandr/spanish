@@ -6465,9 +6465,20 @@ function loadEarQuestion() {
   earCurrentWord = earPool[earIndex++];
   const word     = earCurrentWord;
 
-  // Speak the Spanish word — this IS the question
-  const earRate = BLITZ_TIERS[earTierIndex].ms >= 3000 ? 0.8 : 0.9;
-  speak(word.es, earRate);
+  // Build 4 English options (correct + 3 distractors)
+  const correct     = word.en;
+  const distractors = buildEarDistractors(word, correct, 3);
+  const options     = shuffle([correct, ...distractors]);
+
+  const container = document.getElementById('earOptions');
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className   = 'blitz-option';
+    btn.textContent = opt;
+    btn.onclick     = () => answerEar(btn, opt, correct, word);
+    container.appendChild(btn);
+  });
 
   // Pulse the speaker button
   const playBtn = document.getElementById('earPlayBtn');
@@ -6480,42 +6491,25 @@ function loadEarQuestion() {
     }, 400);
   }
 
-  // Build 4 English options (correct + 3 distractors)
-  const correct     = word.en;
-  const distractors = buildEarDistractors(word, correct, 3);
-  const options     = shuffle([correct, ...distractors]);
-
-  const container = document.getElementById('earOptions');
-  container.innerHTML = '';
-  options.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.className   = 'blitz-option'; // reuse blitz option styling
-    btn.textContent = opt;
-    btn.onclick     = () => answerEar(btn, opt, correct, word);
-    container.appendChild(btn);
-  });
-
-  // Start countdown ring
-  earGeneration++;
-  const myGen   = earGeneration;
-  const tier    = BLITZ_TIERS[earTierIndex];
-  earDeadline   = performance.now() + tier.ms;
-  // Give a tiny extra delay for the audio to start before ring drains
-  setTimeout(() => {
-    if (earActive && earGeneration === myGen) {
-      earTimer = requestAnimationFrame(() => tickEarRing(myGen));
-    }
-  }, 200);
-
   updateEarScoreDisplay();
-  
-  const timerMs = BLITZ_TIERS[earTierIndex].ms;
 
+  // Increment generation BEFORE speak() so the ring callback matches
+  earGeneration++;
+  const myGen = earGeneration;
+
+  const earRate = BLITZ_TIERS[earTierIndex].ms >= 3000 ? 0.8 : 0.9;
+
+  // ONE speak() call — countdown starts only when audio is playing
   speak(
     word.es,
     earRate,
-    null,                            // onEnd — not needed
-    () => startEarTimer(timerMs)     // onReady — fires when audio plays
+    null,
+    () => {
+      // onReady: audio has started — NOW start the ring countdown
+      if (!earActive || earGeneration !== myGen) return;
+      earDeadline = performance.now() + BLITZ_TIERS[earTierIndex].ms;
+      earTimer = requestAnimationFrame(() => tickEarRing(myGen));
+    }
   );
 }
 
