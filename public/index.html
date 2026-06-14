@@ -4359,45 +4359,38 @@ let dictRevealed  = false;
 
 // ── Voice loading ─────────────────────────────────────────────────────────────
 function loadVoices() {
-  const voices = speechSynthesis.getVoices();
-  if (!voices.length) return;
   const sel = document.getElementById('voiceSelect');
   sel.innerHTML = '';
-  const ranked = [
-    ...voices.filter(v => ['es-MX','es-419','es-US','es-CO','es-AR','es-PE','es-CL'].includes(v.lang)),
-    ...voices.filter(v => v.lang.startsWith('es-') && !['es-MX','es-419','es-US','es-CO','es-AR','es-PE','es-CL'].includes(v.lang)),
-    ...voices.filter(v => !v.lang.startsWith('es-') && v.lang.startsWith('es'))
+
+  const options = [
+    { label: "Mexico 🇲🇽 Female (Dalia)", value: "mx_female" },
+    { label: "Mexico 🇲🇽 Male (Jorge)", value: "mx_male" },
+    { label: "Chile 🇨🇱 Female (Catalina)", value: "cl_female" },
+    { label: "Chile 🇨🇱 Male (Lorenzo)", value: "cl_male" }
   ];
-  const seen = new Set();
-  const unique = ranked.filter(v => {
-    const key = v.name + v.lang;
-    if (seen.has(key)) return false;
-    seen.add(key); return true;
+
+  options.forEach(opt => {
+    const el = document.createElement('option');
+    el.value = opt.value;
+    el.textContent = opt.label;
+    sel.appendChild(el);
   });
-  if (!unique.length) {
-    const opt = document.createElement('option');
-    opt.textContent = 'No Spanish voices — install via OS Language Settings';
-    opt.disabled = true;
-    sel.appendChild(opt);
-    return;
-  }
-  unique.forEach((v, i) => {
-    const opt = document.createElement('option');
-    const region = v.lang.includes('-') ? v.lang.split('-')[1] : v.lang;
-    opt.value = i;
-    opt.textContent = v.lang.startsWith('es-') ? `${v.name} (${region})` : v.name;
-    sel.appendChild(opt);
-  });
-  sel._voices = unique;
-  selectedVoice = unique[0];
+
+  sel.value = "mx_female";
+  selectedVoice = sel.value;
 }
-speechSynthesis.onvoiceschanged = loadVoices;
-setTimeout(loadVoices, 100);
 
 function onVoiceChange() {
   const sel = document.getElementById('voiceSelect');
-  if (sel._voices) selectedVoice = sel._voices[parseInt(sel.value)] || null;
+  selectedVoice = sel.value;
 }
+
+const VOICE_MAP = {
+  mx_female: "es-MX-DaliaNeural",
+  mx_male: "es-MX-JorgeNeural",
+  cl_female: "es-CL-CatalinaNeural",
+  cl_male: "es-CL-LorenzoNeural"
+};
 
 // ── TTS core ──────────────────────────────────────────────────────────────────
 async function speak(text, voice = "es-MX-DaliaNeural") {
@@ -4410,27 +4403,57 @@ async function speak(text, voice = "es-MX-DaliaNeural") {
       body: JSON.stringify({ text, voice })
     });
 
-    if (!res.ok) throw new Error("Azure failed");
+    // 🔥 IMPORTANT: surface real Azure errors
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("❌ Azure error response:", errText);
+      throw new Error(errText || "Azure failed");
+    }
 
     const blob = await res.blob();
+
+    // 🧪 DEBUG: confirms whether Azure actually returned audio
+    console.log("🎧 Azure blob size:", blob.size);
+
+    if (!blob || blob.size === 0) {
+      throw new Error("Empty audio blob from Azure");
+    }
+
     const url = URL.createObjectURL(blob);
 
     const audio = new Audio(url);
-    audio.play();
+    audio.preload = "auto";
+
+    // 🧹 cleanup to avoid memory leaks
+    audio.onended = () => {
+      URL.revokeObjectURL(url);
+    };
+
+    // 🔊 play + catch autoplay issues (Safari etc.)
+    audio.play().catch(err => {
+      console.warn("⚠️ Audio play blocked or failed:", err);
+    });
 
   } catch (err) {
-    console.warn("Azure failed → fallback");
+    console.warn("❌ Azure failed → fallback", err);
 
     fallbackSpeak(text);
   }
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// Fallback (browser speech synthesis)
+// ─────────────────────────────────────────────────────────────
+
 function fallbackSpeak(text) {
   const voices = speechSynthesis.getVoices();
 
   const voice =
-    voices.find(v => v.lang.startsWith("es") && !v.name.includes("Zarvox"))
-    || voices[0];
+    voices.find(v =>
+      v.lang.startsWith("es") &&
+      !v.name.toLowerCase().includes("zarvox")
+    ) || voices[0];
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.voice = voice;
@@ -4439,27 +4462,57 @@ function fallbackSpeak(text) {
   speechSynthesis.speak(utterance);
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// Speed control
+// ─────────────────────────────────────────────────────────────
+
 function setSpeed(rate) {
   speakRate = rate;
+
   document.querySelectorAll('[data-speed]').forEach(b => {
-    b.classList.toggle('active', parseFloat(b.dataset.speed) === rate);
+    b.classList.toggle(
+      'active',
+      parseFloat(b.dataset.speed) === rate
+    );
   });
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// Auto-advance toggle
+// ─────────────────────────────────────────────────────────────
+
 function toggleAutoAdvance() {
   autoAdvance = !autoAdvance;
+
   const tog  = document.getElementById('autoAdvanceToggle');
   const knob = document.getElementById('autoAdvanceKnob');
-  tog.style.background  = autoAdvance ? 'var(--terracotta)' : 'var(--border)';
-  knob.style.left       = autoAdvance ? '18px' : '2px';
+
+  tog.style.background = autoAdvance
+    ? 'var(--terracotta)'
+    : 'var(--border)';
+
+  knob.style.left = autoAdvance ? '18px' : '2px';
+
   if (!autoAdvance) clearAutoAdvance();
 }
+
 function clearAutoAdvance() {
-  if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+  if (autoAdvanceTimer) {
+    clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer = null;
+  }
 }
+
 function scheduleAutoAdvance(nextFn, playFn) {
   clearAutoAdvance();
-  autoAdvanceTimer = setTimeout(() => { nextFn(); setTimeout(playFn, 500); }, 1800);
+
+  autoAdvanceTimer = setTimeout(() => {
+    nextFn();
+
+    setTimeout(playFn, 500);
+  }, 1800);
 }
 
 // ── Mode switching ────────────────────────────────────────────────────────────
