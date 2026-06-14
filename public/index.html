@@ -692,8 +692,6 @@
   <script src="vocab-extended-medical.js"></script>
   <script src="vocab-extended-wildlife.js"></script>
   <script src="vocab-extended-b2.js"></script>
-  
-  <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
 </head>
 <body>
 
@@ -4616,7 +4614,6 @@ let speakIndex    = 0;
 let listenIndex   = 0;
 let speakRate     = 0.85;
 
-
 let useAzure = true;
 let selectedVoiceKey = "es-MX-DaliaNeural";
 
@@ -4688,67 +4685,60 @@ function onVoiceChange() {
   selectedVoiceKey = sel.value;
 }
 
-// ── TTS core ──────────────────────────────────────────────────────────────────
+// ── TTS core — all audio goes through /api/tts (server-side key) ──
+let currentAudio = null; // track playing audio so we can cancel
+
 function speak(text, rate, onEnd) {
-
-  if (useAzure && window.SpeechSDK) {
-
-    const speechConfig =
-      SpeechSDK.SpeechConfig.fromSubscription(
-        AZURE_SPEECH_KEY,
-        AZURE_SPEECH_REGION
-      );
-
-    speechConfig.speechSynthesisVoiceName =
-      selectedVoiceKey;
-
-    speechConfig.speechSynthesisOutputFormat =
-      SpeechSDK.SpeechSynthesisOutputFormat.Audio24Khz48KBitRateMonoMp3;
-
-    const synthesizer =
-      new SpeechSDK.SpeechSynthesizer(speechConfig);
-
-    synthesizer.speakTextAsync(
-      text,
-      result => {
-        synthesizer.close();
-
-        if (onEnd) onEnd();
-      },
-      err => {
-        console.error("Azure speech error:", err);
-
-        synthesizer.close();
-
-        fallbackBrowserSpeech(text, rate, onEnd);
-      }
-    );
-
-    return;
+  // Cancel any currently playing audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
   }
+  speechSynthesis.cancel();
 
-  fallbackBrowserSpeech(text, rate, onEnd);
+  fetch('/api/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice: selectedVoiceKey })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('TTS API error: ' + res.status);
+    return res.blob();
+  })
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    currentAudio = audio;
+    // speakRate controls playback speed (0.6 slow, 0.85 normal, 1.1 fast)
+    audio.playbackRate = rate || speakRate || 0.85;
+    audio.onended = () => {
+      URL.revokeObjectURL(url);
+      currentAudio = null;
+      if (onEnd) onEnd();
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      currentAudio = null;
+      fallbackBrowserSpeech(text, rate, onEnd);
+    };
+    audio.play().catch(() => {
+      fallbackBrowserSpeech(text, rate, onEnd);
+    });
+  })
+  .catch(() => {
+    fallbackBrowserSpeech(text, rate, onEnd);
+  });
 }
 
 function fallbackBrowserSpeech(text, rate, onEnd) {
-
   speechSynthesis.cancel();
-
-  const utter =
-    new SpeechSynthesisUtterance(text);
-
-  utter.lang = "es-MX";
-  utter.rate = rate || speakRate;
-
-  if (selectedVoice)
-    utter.voice = selectedVoice;
-
-  if (onEnd)
-    utter.onend = onEnd;
-
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'es-MX';
+  utter.rate = rate || speakRate || 0.85;
+  if (selectedVoice) utter.voice = selectedVoice;
+  if (onEnd) utter.onend = onEnd;
   speechSynthesis.speak(utter);
 }
-
 function setSpeed(rate) {
   speakRate = rate;
   document.querySelectorAll('[data-speed]').forEach(b => {
